@@ -39,19 +39,21 @@ If you encounter a "Failed to connect" error when starting development:
 2. **Firewall**: Ensure your local firewall allows connections to localhost:5199.
 3. **ZOMBIE Processes**: Sometimes a previous Vite instance might still be running. Kill it via Task Manager or `taskkill /F /IM node.exe`.
 
-## General Troubleshooting
+## Deployment
 
-### RAW File Support
-ClioBulk supports ARW, CR2, NEF, and DNG via the `rawloader` crate. If a RAW file fails to decode:
-- Ensure the format is supported by `rawloader`.
-- Check if the file is corrupted.
-- Check logs for specific decoding errors.
+ClioBulk can be deployed as a web application or built as a native desktop app.
 
-### Performance Issues
-Bulk processing is CPU-intensive. ClioBulk automatically calculates concurrency based on your CPU cores (usually half of available logical cores).
-- If the system becomes unresponsive, the concurrency limit might need adjustment in `src-tauri/src/commands.rs`.
+- **Web (Vercel)**: Optimized for browser-based processing using WebGL. See [DEPLOYMENT.md](./DEPLOYMENT.md) for details.
+- **Desktop (Tauri)**: Provides full RAW support and native performance.
 
-### Logging
-Logs are handled by `tauri-plugin-log`. 
-- **Development**: Logs are printed to the terminal/console.
-- **Production**: Logs can be found in the application data directory (e.g., `%APPDATA%/ClioBulk/logs/cliobulk.log` on Windows).
+### Build Optimization
+The project uses a custom `vite.config.js` that:
+- Implements manual chunking for vendor libraries (`react`, `lucide-react`).
+- Configures Tauri-specific server settings (port 5199).
+- Sets appropriate build targets for both environments.
+
+### Web Engine vs Native Engine
+- **Web Engine**: Uses `src/workers/processor.worker.js` and `src/utils/webgl-engine.js`.
+- **Native Engine**: Uses Rust commands in `src-tauri/src/commands.rs` and `src-tauri/src/image_ops.rs`.
+
+The frontend dynamically detects the environment using `window.__TAURI__` and switches engines accordingly.

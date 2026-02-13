@@ -202,15 +202,15 @@ function App() {
     }
   }, [updateFileStatus, setProgress]);
 
-  const handleFileChange = (e) => {
+  const handleFileChange = useCallback((e) => {
     const selectedFiles = Array.from(e.target.files).map(f => ({
         file: f,
         name: f.name
     }));
     addFiles(selectedFiles);
-  };
+  }, [addFiles]);
 
-  const handleTauriFileOpen = async () => {
+  const handleTauriFileOpen = useCallback(async () => {
     try {
         const selected = await open({
         multiple: true,
@@ -229,18 +229,18 @@ function App() {
     } catch (err) {
         alert(`Dialog Error: ${err}`);
     }
-  };
+  }, [addFiles]);
 
-  const handleLutUpload = async (e) => {
+  const handleLutUpload = useCallback(async (e) => {
     const file = e.target.files[0];
     if (file) {
       const text = await file.text();
       const parsedLut = parseCubeLUT(text);
       setLut(parsedLut);
     }
-  };
+  }, [setLut]);
 
-  const handleWatermarkText = (e) => {
+  const handleWatermarkText = useCallback((e) => {
     const text = e.target.value;
     if (text) {
       const canvas = createTextWatermark(text);
@@ -248,7 +248,7 @@ function App() {
     } else {
       setWatermark(null);
     }
-  };
+  }, [setWatermark]);
 
   const [processingOptions, setProcessingOptions] = useState({
     brightness: 0.0,
@@ -258,7 +258,7 @@ function App() {
     denoise: false
   });
 
-  const startProcessing = async () => {
+  const startProcessing = useCallback(async () => {
     setProcessing(true);
     setProgress(0);
 
@@ -342,9 +342,9 @@ function App() {
       }
       setProcessing(false);
     }
-  };
+  }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
-  const downloadAll = () => {
+  const downloadAll = useCallback(() => {
     Object.entries(processedFiles).forEach(([id, blob]) => {
       const fileItem = files.find(f => f.id === id);
       const url = URL.createObjectURL(blob);
@@ -354,7 +354,7 @@ function App() {
       a.click();
       URL.revokeObjectURL(url);
     });
-  };
+  }, [files, processedFiles]);
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white selection:bg-blue-500/30">
