@@ -24,6 +24,17 @@ import { downloadDir } from '@tauri-apps/api/path';
 
 import { logger } from './utils/logger';
 
+// --- Constants ---
+
+const PRESETS = [
+  { name: 'Default', options: { brightness: 0.0, contrast: 1.0, saturation: 1.0, adaptive_threshold: false, denoise: false } },
+  { name: 'Vivid', options: { brightness: 0.05, contrast: 1.2, saturation: 1.3, adaptive_threshold: false, denoise: false } },
+  { name: 'Soft', options: { brightness: 0.1, contrast: 0.9, saturation: 0.8, adaptive_threshold: false, denoise: true } },
+  { name: 'B&W', options: { brightness: 0.0, contrast: 1.2, saturation: 0.0, adaptive_threshold: false, denoise: false } },
+  { name: 'High Contrast', options: { brightness: 0.0, contrast: 1.5, saturation: 1.1, adaptive_threshold: false, denoise: false } },
+  { name: 'Document', options: { brightness: 0.2, contrast: 1.3, saturation: 0.0, adaptive_threshold: true, denoise: true } },
+];
+
 // --- Components ---
 
 const FileCard = memo(({ fileItem, processedBlob, onRemove, isTauri }) => {
@@ -259,7 +270,11 @@ function App() {
           .map(f => {
             const inputPath = f.path || f.file?.name;
             const fileName = f.name;
-            const outputPath = `${outBase}\\processed_${fileName}`;
+            // Ensure output has .jpg extension for compatibility
+            const nameWithoutExt = fileName.lastIndexOf('.') !== -1
+              ? fileName.substring(0, fileName.lastIndexOf('.'))
+              : fileName;
+            const outputPath = `${outBase}\\processed_${nameWithoutExt}.jpg`;
             return [inputPath, outputPath];
           });
         
@@ -393,6 +408,25 @@ function App() {
             </h2>
             
             <div className="space-y-8">
+              {/* Presets Section */}
+              <section>
+                 <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
+                  <Monitor size={14} />
+                  Presets
+                </h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {PRESETS.map(preset => (
+                    <button
+                      key={preset.name}
+                      onClick={() => setProcessingOptions(preset.options)}
+                      className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-medium hover:bg-zinc-800 hover:border-zinc-600 transition-all text-left"
+                    >
+                      {preset.name}
+                    </button>
+                  ))}
+                </div>
+              </section>
+
               {/* Image Adjustments */}
               <section>
                 <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2">
