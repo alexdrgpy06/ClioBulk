@@ -15,22 +15,32 @@ pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
             // This provides color instead of grayscale.
             let out_w = width / 2;
             let out_h = height / 2;
-            let mut vec = Vec::with_capacity(out_w * out_h * 3);
             
-            for y in 0..out_h {
-                for x in 0..out_w {
-                    let idx = (y * 2) * width + (x * 2);
-                    let r = data[idx];
-                    let g1 = data[idx + 1];
-                    let g2 = data[idx + width];
-                    let b = data[idx + width + 1];
-                    
-                    // Simple average for Green, and shift 16-bit to 8-bit
-                    vec.push((r >> 8) as u8);
-                    vec.push((((g1 as u32 + g2 as u32) / 2) >> 8) as u8);
-                    vec.push((b >> 8) as u8);
-                }
-            }
+            // OPTIMIZATION: Use rayon for parallel processing of pixels.
+            // This significantly speeds up RAW decoding by utilizing all CPU cores.
+            let mut vec = vec![0u8; out_w * out_h * 3];
+
+            vec.par_chunks_exact_mut(3).enumerate().for_each(|(i, pixel)| {
+                let x = i % out_w;
+                let y = i / out_w;
+
+                let idx = (y * 2) * width + (x * 2);
+
+                // Ensure we don't read out of bounds (should happen naturally by loop limits but good to be safe)
+                // However, logic dictates idx max is (height-2)*width + (width-2).
+                // data len is width*height.
+                // data[idx + width + 1] is safe.
+
+                let r = data[idx];
+                let g1 = data[idx + 1];
+                let g2 = data[idx + width];
+                let b = data[idx + width + 1];
+
+                // Simple average for Green, and shift 16-bit to 8-bit
+                pixel[0] = (r >> 8) as u8;
+                pixel[1] = (((g1 as u32 + g2 as u32) / 2) >> 8) as u8;
+                pixel[2] = (b >> 8) as u8;
+            });
             
             let img = ImageBuffer::<Rgb<u8>, _>::from_raw(out_w as u32, out_h as u32, vec)
                 .ok_or("Failed to create image buffer")?;
@@ -39,21 +49,25 @@ pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
         rawloader::RawImageData::Float(ref data) => {
             let out_w = width / 2;
             let out_h = height / 2;
-            let mut vec = Vec::with_capacity(out_w * out_h * 3);
             
-            for y in 0..out_h {
-                for x in 0..out_w {
-                    let idx = (y * 2) * width + (x * 2);
-                    let r = data[idx];
-                    let g1 = data[idx + 1];
-                    let g2 = data[idx + width];
-                    let b = data[idx + width + 1];
-                    
-                    vec.push((r.clamp(0.0, 1.0) * 255.0) as u8);
-                    vec.push((((g1 + g2) / 2.0).clamp(0.0, 1.0) * 255.0) as u8);
-                    vec.push((b.clamp(0.0, 1.0) * 255.0) as u8);
-                }
-            }
+            // OPTIMIZATION: Parallelize float processing as well.
+            let mut vec = vec![0u8; out_w * out_h * 3];
+
+            vec.par_chunks_exact_mut(3).enumerate().for_each(|(i, pixel)| {
+                let x = i % out_w;
+                let y = i / out_w;
+
+                let idx = (y * 2) * width + (x * 2);
+                let r = data[idx];
+                let g1 = data[idx + 1];
+                let g2 = data[idx + width];
+                let b = data[idx + width + 1];
+
+                pixel[0] = (r.clamp(0.0, 1.0) * 255.0) as u8;
+                pixel[1] = (((g1 + g2) / 2.0).clamp(0.0, 1.0) * 255.0) as u8;
+                pixel[2] = (b.clamp(0.0, 1.0) * 255.0) as u8;
+            });
+
             let img = ImageBuffer::<Rgb<u8>, _>::from_raw(out_w as u32, out_h as u32, vec)
                 .ok_or("Failed to create image buffer")?;
             Ok(DynamicImage::ImageRgb8(img))
