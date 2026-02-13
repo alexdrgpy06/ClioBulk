@@ -109,7 +109,8 @@ const FileCard = memo(({ fileItem, processedBlob, onRemove, isTauri }) => {
       {/* Remove Button */}
       <button 
         onClick={() => onRemove(fileItem.id)}
-        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={`Remove ${fileItem.name}`}
+        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-opacity"
       >
         <X size={14} />
       </button>
