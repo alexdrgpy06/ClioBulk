@@ -274,7 +274,8 @@ function App() {
             const nameWithoutExt = fileName.lastIndexOf('.') !== -1
               ? fileName.substring(0, fileName.lastIndexOf('.'))
               : fileName;
-            const outputPath = `${outBase}\\processed_${nameWithoutExt}.jpg`;
+            // Use path.join compatible logic (forward slash works cross-platform in JS)
+            const outputPath = `${outBase}/processed_${nameWithoutExt}.jpg`;
             return [inputPath, outputPath];
           });
         

@@ -84,10 +84,12 @@ pub fn process_image_inner<R: Runtime>(
 
     match img_res {
         Ok(img) => {
+            info!("Successfully decoded image: {}x{}", img.width(), img.height());
             emit("filtering", true, None);
             let img = image_ops::apply_filters(img, &options);
             
             emit("saving", true, None);
+            info!("Saving processed image to: {}", out_path);
             match img.save(&out_path) {
                 Ok(_) => {
                     info!("Successfully saved: {}", out_path);

@@ -2,12 +2,16 @@ use image::{DynamicImage, ImageBuffer, Rgb};
 use crate::commands::ProcessOptions;
 use rayon::prelude::*;
 
+use log::info;
+
 /// Decodes a RAW file into a DynamicImage.
 /// Uses Bilinear Demosaicing to provide high-quality full-resolution images.
 pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
+    info!("Starting RAW decode: {}", path);
     let raw = rawloader::decode_file(path).map_err(|e| e.to_string())?;
     let width = raw.width;
     let height = raw.height;
+    info!("RAW decoded successfully. Dimensions: {}x{}", width, height);
     
     match raw.data {
         rawloader::RawImageData::Integer(ref data) => {
@@ -113,8 +117,10 @@ pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
 /// Applies the selected filters to the image based on user options.
 /// Saturation adjustment is parallelized using Rayon for high performance.
 pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> DynamicImage {
+    info!("Applying filters: B={}, C={}, S={}", options.brightness, options.contrast, options.saturation);
     // 1. Denoise (First to avoid amplifying noise)
     if options.denoise {
+        info!("Applying median denoise...");
         img = match img {
             DynamicImage::ImageRgb8(rgb) => {
                 DynamicImage::ImageRgb8(imageproc::filter::median_filter(&rgb, 1, 1))
