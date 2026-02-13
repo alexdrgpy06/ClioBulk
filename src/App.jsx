@@ -259,7 +259,17 @@ function App() {
           .map(f => {
             const inputPath = f.path || f.file?.name;
             const fileName = f.name;
-            const outputPath = `${outBase}\\processed_${fileName}`;
+
+            // SECURITY: Ensure output extension is safe and supported by backend
+            const parts = fileName.split('.');
+            const ext = parts.length > 1 ? parts.pop().toLowerCase() : '';
+            const baseName = parts.join('.');
+
+            const safeExtensions = ['jpg', 'jpeg', 'png', 'webp'];
+            const outExt = safeExtensions.includes(ext) ? ext : 'jpg';
+
+            const safeFileName = `${baseName}.${outExt}`;
+            const outputPath = `${outBase}\\processed_${safeFileName}`;
             return [inputPath, outputPath];
           });
         

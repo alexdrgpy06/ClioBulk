@@ -1,4 +1,3 @@
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -53,8 +52,23 @@ pub fn decode_raw(path: String) -> Result<String, String> {
     Ok(format!("data:image/jpeg;base64,{}", base64_str))
 }
 
+fn validate_output_path(path: &str) -> Result<(), String> {
+    let allowed_extensions = ["jpg", "jpeg", "png", "webp"];
+    let path = std::path::Path::new(path);
+
+    if let Some(ext) = path.extension() {
+        if let Some(ext_str) = ext.to_str() {
+            if allowed_extensions.contains(&ext_str.to_lowercase().as_str()) {
+                return Ok(());
+            }
+        }
+    }
+
+    Err(format!("Invalid output file extension. Allowed: {:?}", allowed_extensions))
+}
+
 /// Internal processing logic used by both single and bulk operations.
-pub fn process_image_inner<R: Runtime>(
+fn process_image_inner<R: Runtime>(
     app: &AppHandle<R>,
     path: String,
     out_path: String,
@@ -70,6 +84,17 @@ pub fn process_image_inner<R: Runtime>(
             stage: stage.to_string(),
         });
     };
+
+    // Security Check: Validate output path extension
+    if let Err(e) = validate_output_path(&out_path) {
+        error!("Security violation for {}: {}", out_path, e);
+        emit("failed", false, Some(e.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(e),
+        };
+    }
 
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
@@ -124,12 +149,6 @@ pub fn process_image_inner<R: Runtime>(
     }
 }
 
-/// Processes a single image file.
-#[tauri::command]
-pub fn process_image(app: AppHandle, path: String, out_path: String, options: ProcessOptions) -> ProcessResult {
-    process_image_inner(&app, path, out_path, options, 100.0)
-}
-
 /// Core bulk processing logic with CPU-optimized concurrency.
 #[tauri::command]
 pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options: ProcessOptions) -> Result<(), String> {
@@ -164,4 +183,29 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_output_path() {
+        // Valid paths
+        assert!(validate_output_path("image.jpg").is_ok());
+        assert!(validate_output_path("image.jpeg").is_ok());
+        assert!(validate_output_path("image.png").is_ok());
+        assert!(validate_output_path("image.webp").is_ok());
+        assert!(validate_output_path("/home/user/image.jpg").is_ok());
+        assert!(validate_output_path("C:\\Users\\User\\image.jpg").is_ok());
+        assert!(validate_output_path("IMAGE.JPG").is_ok()); // Case insensitive
+
+        // Invalid paths
+        assert!(validate_output_path("image.exe").is_err());
+        assert!(validate_output_path("image.sh").is_err());
+        assert!(validate_output_path("image").is_err()); // No extension
+        assert!(validate_output_path("image.txt").is_err());
+        assert!(validate_output_path("image.jpg.exe").is_err());
+        assert!(validate_output_path("/etc/passwd").is_err());
+    }
 }
