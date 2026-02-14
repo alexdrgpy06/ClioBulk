@@ -162,11 +162,17 @@ function App() {
       // Listen for progress events from Rust
       const setupListener = async () => {
         const unlisten = await listen('process-progress', (event) => {
-          const { path, success, error, progress: p } = event.payload;
-          // Find the file by path
-          const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-          if (fileItem) {
-            updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+          const { path, success, error, progress: p, stage } = event.payload;
+
+          // Performance Optimization: Only update status when processing is actually complete or failed.
+          // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
+          // This avoids ~75% of redundant store updates and re-renders.
+          if (stage === 'completed' || stage === 'failed') {
+            // Find the file by path
+            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
+            if (fileItem) {
+              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            }
           }
           setProgress(p);
         });
