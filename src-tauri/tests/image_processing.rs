@@ -41,7 +41,7 @@ fn test_contrast_adjustment() {
         denoise: false,
     };
     
-    let result = apply_filters(dyn_img, &options);
+    let _result = apply_filters(dyn_img, &options);
     // For a uniform image, contrast adjustment might not change much if it's centered around 128,
     // but brighten/contrast usually shift values.
     // Let's just verify it runs without panic for now, or use a more varied image.
