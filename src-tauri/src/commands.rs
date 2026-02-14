@@ -2,6 +2,7 @@ use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
+use tauri_plugin_fs::FsExt;
 use log::{info, error};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
@@ -35,8 +36,12 @@ pub struct ProgressPayload {
 /// Decodes a RAW file for a preview display in the UI.
 /// Returns a base64-encoded thumbnail string.
 #[tauri::command]
-pub fn decode_raw(path: String) -> Result<String, String> {
+pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     info!("Decoding RAW file for preview: {}", path);
+
+    if !app.fs_scope().is_allowed(&path) {
+        return Err("Access denied".to_string());
+    }
     
     if !std::path::Path::new(&path).exists() {
         error!("RAW file not found: {}", path);
@@ -70,6 +75,28 @@ pub fn process_image_inner<R: Runtime>(
             stage: stage.to_string(),
         });
     };
+
+    if !app.fs_scope().is_allowed(&path) {
+        let err = "Access denied (input)".to_string();
+        emit("failed", false, Some(err.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err),
+        };
+    }
+
+    // Check output path scope/permission if possible, but usually creation is checked by directory scope.
+    // However, is_allowed checks if the path is allowed.
+    if !app.fs_scope().is_allowed(&out_path) {
+         let err = "Access denied (output)".to_string();
+        emit("failed", false, Some(err.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err),
+        };
+    }
 
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
