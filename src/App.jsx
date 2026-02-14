@@ -275,7 +275,7 @@ function App() {
             const nameWithoutExt = fileName.lastIndexOf('.') !== -1
               ? fileName.substring(0, fileName.lastIndexOf('.'))
               : fileName;
-            const outputPath = `${outBase}\\processed_${nameWithoutExt}.jpg`;
+            const outputPath = `${outBase}/processed_${nameWithoutExt}.jpg`;
             return [inputPath, outputPath];
           });
         
