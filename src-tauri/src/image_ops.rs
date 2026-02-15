@@ -4,11 +4,17 @@ use rayon::prelude::*;
 
 /// Decodes a RAW file into a DynamicImage.
 /// Uses Bilinear Demosaicing to provide high-quality full-resolution images.
+/// 
+/// This function handles both Integer and Float raw data types provided by `rawloader`.
+/// It normalizes pixel values based on the camera's white level to ensure correct exposure.
 pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
     let raw = rawloader::decode_file(path).map_err(|e| e.to_string())?;
     let width = raw.width;
     let height = raw.height;
     
+    // Normalize pixel values based on white level (handling different bit depths)
+    let white_level = raw.whitelevels[0] as f32; // Use the first channel's white level
+
     match raw.data {
         rawloader::RawImageData::Integer(ref data) => {
             // Bilinear Demosaicing (RGGB assumption)
@@ -49,9 +55,14 @@ pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
                         (r, g, b)
                     };
 
-                    row_pixels.push((r >> 8) as u8);
-                    row_pixels.push((g >> 8) as u8);
-                    row_pixels.push((b >> 8) as u8);
+                    // Scale to 8-bit using white level
+                    let r8 = ((r as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+                    let g8 = ((g as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+                    let b8 = ((b as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+
+                    row_pixels.push(r8);
+                    row_pixels.push(g8);
+                    row_pixels.push(b8);
                 }
                 row_pixels
             }).collect();
