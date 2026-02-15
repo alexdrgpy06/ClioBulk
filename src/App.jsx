@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo, useCallback } from 'react';
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -152,6 +152,7 @@ function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     // Check for Tauri
@@ -209,6 +210,7 @@ function App() {
         name: f.name
     }));
     addFiles(selectedFiles);
+    e.target.value = '';
   }, [addFiles]);
 
   const handleTauriFileOpen = useCallback(async () => {
@@ -231,6 +233,14 @@ function App() {
         alert(`Dialog Error: ${err}`);
     }
   }, [addFiles]);
+
+  const handleTriggerFileUpload = useCallback(() => {
+    if (isTauri) {
+      handleTauriFileOpen();
+    } else {
+      fileInputRef.current?.click();
+    }
+  }, [isTauri, handleTauriFileOpen]);
 
   const handleLutUpload = useCallback(async (e) => {
     const file = e.target.files[0];
@@ -572,13 +582,12 @@ function App() {
                   <h2 className="text-xl font-bold mb-1">Drop your photos here</h2>
                   <p className="text-zinc-500 text-sm">RAW, JPEG, or PNG. Everything stays on your device.</p>
                 </div>
-                <label 
-                  onClick={isTauri ? handleTauriFileOpen : undefined}
-                  className="mt-4 px-8 py-3 bg-white text-black rounded-full font-bold cursor-pointer hover:bg-zinc-200 transition-colors shadow-lg"
+                <button
+                  onClick={handleTriggerFileUpload}
+                  className="mt-4 px-8 py-3 bg-white text-black rounded-full font-bold cursor-pointer hover:bg-zinc-200 transition-colors shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:ring-offset-black"
                 >
                   Select Files
-                  {!isTauri && <input type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*,.arw,.cr2,.nef,.dng" />}
-                </label>
+                </button>
               </div>
             </div>
           ) : (
@@ -593,16 +602,15 @@ function App() {
                 />
               ))}
               
-              <label 
-                onClick={isTauri ? handleTauriFileOpen : undefined}
-                className="aspect-square border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-zinc-900/50 hover:border-zinc-700 cursor-pointer transition-all group"
+              <button
+                onClick={handleTriggerFileUpload}
+                className="aspect-square border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-zinc-900/50 hover:border-zinc-700 cursor-pointer transition-all group focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50"
               >
                 <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center group-hover:scale-110 transition-transform">
                   <Upload size={20} className="text-zinc-500 group-hover:text-blue-500 transition-colors" />
                 </div>
                 <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Add More</span>
-                {!isTauri && <input type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*,.arw,.cr2,.nef,.dng" />}
-              </label>
+              </button>
             </div>
           )}
         </main>
@@ -642,6 +650,7 @@ function App() {
           <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
         </div>
       </footer>
+      {!isTauri && <input type="file" multiple className="hidden" ref={fileInputRef} onChange={handleFileChange} accept="image/*,.arw,.cr2,.nef,.dng" />}
     </div>
   );
 }
