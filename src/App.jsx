@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, memo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, memo, useCallback } from 'react';
 import { 
   Image as ImageIcon, 
   Upload, 
@@ -23,6 +23,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { downloadDir } from '@tauri-apps/api/path';
 
 import { logger } from './utils/logger';
+import ProgressBar from './components/ProgressBar';
+import { useShallow } from 'zustand/react/shallow';
 
 // --- Constants ---
 
@@ -142,12 +144,25 @@ function App() {
     setWatermark,
     processing,
     setProcessing,
-    progress,
     setProgress,
     updateFileStatus,
     processedFiles,
     clearFiles
-  } = useStore();
+  } = useStore(useShallow(state => ({
+    files: state.files,
+    addFiles: state.addFiles,
+    removeFile: state.removeFile,
+    lut: state.lut,
+    setLut: state.setLut,
+    watermark: state.watermark,
+    setWatermark: state.setWatermark,
+    processing: state.processing,
+    setProcessing: state.setProcessing,
+    setProgress: state.setProgress,
+    updateFileStatus: state.updateFileStatus,
+    processedFiles: state.processedFiles,
+    clearFiles: state.clearFiles
+  })));
 
   const [showSettings, setShowSettings] = useState(false);
   const [isTauri, setIsTauri] = useState(false);
@@ -609,14 +624,7 @@ function App() {
       </div>
       
       {/* Progress Bar (Fixed) */}
-      {processing && (
-        <div className="fixed bottom-0 left-0 w-full h-1.5 bg-zinc-900 z-50">
-          <div 
-            className="h-full bg-blue-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(37,99,235,0.5)]" 
-            style={{ width: `${progress}%` }}
-          />
-        </div>
-      )}
+      <ProgressBar />
 
       {/* Footer */}
       <footer className="px-6 py-4 border-t border-zinc-800 text-[10px] text-zinc-500 flex justify-between items-center bg-zinc-950">
