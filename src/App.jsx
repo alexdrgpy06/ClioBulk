@@ -1,18 +1,3 @@
-/**
- * @file App.jsx
- * @description Main application component for ClioBulk. Orchestrates the UI, state management, 
- * and handles the switching between Native (Tauri/Rust) and Browser-based processing engines.
- * 
- * Includes professional features like:
- * - Real-time RAW decoding previews.
- * - Dynamic 3D LUT (Cube) color grading application.
- * - Canvas-based high-performance watermarking.
- * - Batch processing via Web Workers or Native IPC.
- * 
- * @author Alejandro Ramírez
- * @version 2.0.0-optimized
- */
-
 import React, { useState, useEffect, useRef, useMemo, memo, useCallback } from 'react';
 import { 
   Image as ImageIcon, 
@@ -37,6 +22,8 @@ import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
 import { downloadDir } from '@tauri-apps/api/path';
 import { logger } from './utils/logger';
+import ProgressBar from './components/ProgressBar';
+import { useShallow } from 'zustand/react/shallow';
 
 /**
  * Predefined image processing configurations for quick application.
@@ -136,7 +123,8 @@ const FileCard = memo(({ fileItem, processedBlob, onRemove, isTauri }) => {
 
       <button 
         onClick={() => onRemove(fileItem.id)}
-        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label={`Remove ${fileItem.name}`}
+        className="absolute top-2 right-2 p-1.5 bg-black/50 hover:bg-red-600 rounded-full opacity-0 group-hover:opacity-100 focus:opacity-100 focus:outline-none focus:ring-2 focus:ring-red-500 transition-opacity"
       >
         <X size={14} />
       </button>
@@ -151,14 +139,39 @@ const FileCard = memo(({ fileItem, processedBlob, onRemove, isTauri }) => {
 function App() {
   // Global State from Store
   const { 
-    files, addFiles, removeFile, lut, setLut, watermark, setWatermark,
-    processing, setProcessing, progress, setProgress, updateFileStatus,
-    processedFiles, clearFiles
-  } = useStore();
+    files, 
+    addFiles, 
+    removeFile, 
+    lut, 
+    setLut, 
+    watermark, 
+    setWatermark,
+    processing,
+    setProcessing,
+    setProgress,
+    updateFileStatus,
+    processedFiles,
+    clearFiles
+  } = useStore(useShallow(state => ({
+    files: state.files,
+    addFiles: state.addFiles,
+    removeFile: state.removeFile,
+    lut: state.lut,
+    setLut: state.setLut,
+    watermark: state.watermark,
+    setWatermark: state.setWatermark,
+    processing: state.processing,
+    setProcessing: state.setProcessing,
+    setProgress: state.setProgress,
+    updateFileStatus: state.updateFileStatus,
+    processedFiles: state.processedFiles,
+    clearFiles: state.clearFiles
+  })));
 
   const [showSettings, setShowSettings] = useState(false);
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   /**
    * Environment Detection & Event Listener Setup
@@ -171,10 +184,17 @@ function App() {
       // Setup listener for real-time progress events from the Rust backend
       const setupListener = async () => {
         const unlisten = await listen('process-progress', (event) => {
-          const { path, success, error, progress: p } = event.payload;
-          const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-          if (fileItem) {
-            updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+          const { path, success, error, progress: p, stage } = event.payload;
+
+          // Performance Optimization: Only update status when processing is actually complete or failed.
+          // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
+          // This avoids ~75% of redundant store updates and re-renders.
+          if (stage === 'completed' || stage === 'failed') {
+            // Find the file by path
+            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
+            if (fileItem) {
+              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            }
           }
           setProgress(p);
         });
@@ -230,9 +250,14 @@ function App() {
     }
   }, [addFiles]);
 
-  /**
-   * LUT & Watermark Handlers
-   */
+  const handleTriggerFileUpload = useCallback(() => {
+    if (isTauri) {
+      handleTauriFileOpen();
+    } else {
+      fileInputRef.current?.click();
+    }
+  }, [isTauri, handleTauriFileOpen]);
+
   const handleLutUpload = useCallback(async (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -348,12 +373,22 @@ function App() {
           <h1 className="font-bold text-xl tracking-tight">ClioBulk</h1>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => setShowSettings(!showSettings)} className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${showSettings ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700'}`}>
-            <Settings size={18} /><span className="hidden sm:inline text-sm font-medium">Settings</span>
+          <button 
+            onClick={() => setShowSettings(!showSettings)}
+            aria-label="Toggle Settings"
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${showSettings ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+          >
+            <Settings size={18} />
+            <span className="hidden sm:inline text-sm font-medium">Settings</span>
           </button>
           {Object.keys(processedFiles).length > 0 && (
-            <button onClick={downloadAll} className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 transition-all shadow-lg shadow-green-600/20">
-              <Download size={18} /><span className="hidden sm:inline text-sm font-medium">Download All</span>
+            <button 
+              onClick={downloadAll}
+              aria-label="Download All Processed Files"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 transition-all shadow-lg shadow-green-600/20"
+            >
+              <Download size={18} />
+              <span className="hidden sm:inline text-sm font-medium">Download All</span>
             </button>
           )}
           <button disabled={files.length === 0 || processing} onClick={startProcessing} className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20">
@@ -401,25 +436,60 @@ function App() {
           {files.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center">
               <div className="max-w-md w-full border-2 border-dashed border-zinc-800 rounded-[2rem] p-12 flex flex-col items-center text-center gap-4 hover:border-zinc-700 hover:bg-zinc-900/50 transition-all group">
-                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-xl"><Upload className="text-zinc-500 group-hover:text-blue-500 transition-colors" /></div>
-                <div><h2 className="text-xl font-bold mb-1">Drop your photos here</h2><p className="text-zinc-500 text-sm">RAW, JPEG, or PNG. Everything stays on your device.</p></div>
-                <label onClick={isTauri ? handleTauriFileOpen : undefined} className="mt-4 px-8 py-3 bg-white text-black rounded-full font-bold cursor-pointer hover:bg-zinc-200 transition-colors shadow-lg">
-                  Select Files{!isTauri && <input type="file" multiple className="hidden" onChange={handleFileChange} accept="image/*,.arw,.cr2,.nef,.dng" />}
-                </label>
+                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-xl">
+                  <Upload className="text-zinc-500 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold mb-1">Drop your photos here</h2>
+                  <p className="text-zinc-500 text-sm">RAW, JPEG, or PNG. Everything stays on your device.</p>
+                </div>
+                <button
+                  onClick={handleTriggerFileUpload}
+                  className="mt-4 px-8 py-3 bg-white text-black rounded-full font-bold cursor-pointer hover:bg-zinc-200 transition-colors shadow-lg focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+                >
+                  Select Files
+                </button>
               </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-6">
-              {files.map((fileItem) => <FileCard key={fileItem.id} fileItem={fileItem} processedBlob={processedFiles[fileItem.id]} onRemove={removeFile} isTauri={isTauri} />)}
+              {files.map((fileItem) => (
+                <FileCard 
+                  key={fileItem.id} 
+                  fileItem={fileItem} 
+                  processedBlob={processedFiles[fileItem.id]}
+                  onRemove={removeFile}
+                  isTauri={isTauri}
+                />
+              ))}
+              
+              <button
+                onClick={handleTriggerFileUpload}
+                className="aspect-square border-2 border-dashed border-zinc-800 rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-zinc-900/50 hover:border-zinc-700 cursor-pointer transition-all group focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              >
+                <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <Upload size={20} className="text-zinc-500 group-hover:text-blue-500 transition-colors" />
+                </div>
+                <span className="text-xs text-zinc-500 font-semibold uppercase tracking-wider">Add More</span>
+              </button>
             </div>
           )}
         </main>
       </div>
       
-      {processing && (
-        <div className="fixed bottom-0 left-0 w-full h-1.5 bg-zinc-900 z-50">
-          <div className="h-full bg-blue-600 transition-all duration-500 ease-out shadow-[0_0_10px_rgba(37,99,235,0.5)]" style={{ width: `${progress}%` }} />
-        </div>
+      {/* Progress Bar (Fixed) */}
+      <ProgressBar />
+
+      {/* Hidden File Input for Web */}
+      {!isTauri && (
+        <input
+          type="file"
+          multiple
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleFileChange}
+          accept="image/*,.arw,.cr2,.nef,.dng"
+        />
       )}
 
       <footer className="px-6 py-4 border-t border-zinc-800 text-[10px] text-zinc-500 flex justify-between items-center bg-zinc-950">
