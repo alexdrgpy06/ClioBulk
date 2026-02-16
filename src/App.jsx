@@ -430,16 +430,55 @@ function App() {
                 <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ImageIcon size={14} />Adjustments</h3>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Brightness</label><span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span></div>
-                    <input type="range" min="-1" max="1" step="0.1" value={processingOptions.brightness} onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs">
+                      <label htmlFor="settings-brightness" className="text-zinc-400">Brightness</label>
+                      <span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span>
+                    </div>
+                    <input
+                      id="settings-brightness"
+                      aria-valuetext={`${(processingOptions.brightness * 100).toFixed(0)}%`}
+                      type="range"
+                      min="-1"
+                      max="1"
+                      step="0.1"
+                      value={processingOptions.brightness}
+                      onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})}
+                      className="w-full accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Contrast</label><span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="3" step="0.1" value={processingOptions.contrast} onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs">
+                      <label htmlFor="settings-contrast" className="text-zinc-400">Contrast</label>
+                      <span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span>
+                    </div>
+                    <input
+                      id="settings-contrast"
+                      aria-valuetext={`${processingOptions.contrast.toFixed(1)}x`}
+                      type="range"
+                      min="0"
+                      max="3"
+                      step="0.1"
+                      value={processingOptions.contrast}
+                      onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})}
+                      className="w-full accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+                    />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Saturation</label><span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="2" step="0.1" value={processingOptions.saturation} onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs">
+                      <label htmlFor="settings-saturation" className="text-zinc-400">Saturation</label>
+                      <span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span>
+                    </div>
+                    <input
+                      id="settings-saturation"
+                      aria-valuetext={`${processingOptions.saturation.toFixed(1)}x`}
+                      type="range"
+                      min="0"
+                      max="2"
+                      step="0.1"
+                      value={processingOptions.saturation}
+                      onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})}
+                      className="w-full accent-blue-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg"
+                    />
                   </div>
                 </div>
               </section>
