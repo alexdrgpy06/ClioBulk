@@ -152,7 +152,9 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
     // 2. Combined Adjustments (Brightness, Contrast, Saturation)
     // Fused loop for performance: iterates pixels once and avoids intermediate buffers.
     if options.brightness != 0.0 || options.contrast != 1.0 || options.saturation != 1.0 {
-        let mut rgb_img = img.to_rgb8();
+        // Optimization: Use `into_rgb8()` instead of `to_rgb8()` to avoid cloning the image buffer.
+        // This consumes the DynamicImage and reuses the buffer if it's already Rgb8.
+        let mut rgb_img = img.into_rgb8();
         let raw_pixels = rgb_img.as_mut();
 
         let brightness_offset = options.brightness * 100.0;
@@ -199,7 +201,8 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
 
     // 4. Adaptive Threshold
     if options.adaptive_threshold {
-        let luma = img.to_luma8();
+        // Optimization: Use `into_luma8()` to avoid cloning/allocation if possible.
+        let luma = img.into_luma8();
         let thresholded = imageproc::contrast::adaptive_threshold(&luma, 10);
         img = DynamicImage::ImageLuma8(thresholded);
     }
