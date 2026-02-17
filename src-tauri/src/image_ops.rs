@@ -130,6 +130,97 @@ pub fn decode_raw_to_image(path: &str) -> Result<DynamicImage, String> {
     }
 }
 
+/// Decodes a RAW file for preview purposes, downsampling to the target size.
+/// Uses a "Superpixel" strategy (averaging 2x2 blocks) and skips blocks to achieve
+/// high performance.
+pub fn decode_raw_preview(path: &str, target_size: usize) -> Result<DynamicImage, String> {
+    let raw = rawloader::decode_file(path).map_err(|e| e.to_string())?;
+    let width = raw.width;
+    let height = raw.height;
+
+    // Calculate step to achieve target size (taking 1 block every `step` blocks)
+    // We process 2x2 blocks. Output width approx (width / 2) / step.
+    let step = (width / 2).checked_div(target_size).unwrap_or(1).max(1);
+
+    let output_width = (width / 2) / step;
+    let output_height = (height / 2) / step;
+
+    let white_level = raw.whitelevels[0] as f32;
+
+    match raw.data {
+        rawloader::RawImageData::Integer(ref data) => {
+             let img_buffer: Vec<u8> = (0..output_height).into_par_iter().flat_map(|oy| {
+                let mut row_pixels = Vec::with_capacity(output_width * 3);
+                let src_y = oy * step * 2;
+
+                for ox in 0..output_width {
+                    let src_x = ox * step * 2;
+
+                    if src_x + 1 >= width || src_y + 1 >= height {
+                         row_pixels.push(0); row_pixels.push(0); row_pixels.push(0);
+                         continue;
+                    }
+
+                    // R at (src_x, src_y) - Assuming RGGB pattern matching existing code logic
+                    let r_idx = src_y * width + src_x;
+                    let gr_idx = src_y * width + (src_x + 1);
+                    let gb_idx = (src_y + 1) * width + src_x;
+                    let b_idx = (src_y + 1) * width + (src_x + 1);
+
+                    let r = data[r_idx] as u32;
+                    let g = (data[gr_idx] as u32 + data[gb_idx] as u32) / 2;
+                    let b = data[b_idx] as u32;
+
+                    let r8 = ((r as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+                    let g8 = ((g as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+                    let b8 = ((b as f32 / white_level) * 255.0).clamp(0.0, 255.0) as u8;
+
+                    row_pixels.push(r8);
+                    row_pixels.push(g8);
+                    row_pixels.push(b8);
+                }
+                row_pixels
+             }).collect();
+
+             let img = ImageBuffer::<Rgb<u8>, _>::from_raw(output_width as u32, output_height as u32, img_buffer)
+                .ok_or("Failed to create image buffer")?;
+             Ok(DynamicImage::ImageRgb8(img))
+        },
+        rawloader::RawImageData::Float(ref data) => {
+            let img_buffer: Vec<u8> = (0..output_height).into_par_iter().flat_map(|oy| {
+                let mut row_pixels = Vec::with_capacity(output_width * 3);
+                let src_y = oy * step * 2;
+
+                for ox in 0..output_width {
+                    let src_x = ox * step * 2;
+
+                     if src_x + 1 >= width || src_y + 1 >= height {
+                         row_pixels.push(0); row_pixels.push(0); row_pixels.push(0);
+                         continue;
+                    }
+
+                    let r_idx = src_y * width + src_x;
+                    let gr_idx = src_y * width + (src_x + 1);
+                    let gb_idx = (src_y + 1) * width + src_x;
+                    let b_idx = (src_y + 1) * width + (src_x + 1);
+
+                    let r = data[r_idx];
+                    let g = (data[gr_idx] + data[gb_idx]) / 2.0;
+                    let b = data[b_idx];
+
+                    row_pixels.push((r.clamp(0.0, 1.0) * 255.0) as u8);
+                    row_pixels.push((g.clamp(0.0, 1.0) * 255.0) as u8);
+                    row_pixels.push((b.clamp(0.0, 1.0) * 255.0) as u8);
+                }
+                row_pixels
+            }).collect();
+             let img = ImageBuffer::<Rgb<u8>, _>::from_raw(output_width as u32, output_height as u32, img_buffer)
+                .ok_or("Failed to create image buffer")?;
+            Ok(DynamicImage::ImageRgb8(img))
+        }
+    }
+}
+
 /// Applies the selected filters to the image based on user options.
 /// Saturation adjustment is parallelized using Rayon for high performance.
 pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> DynamicImage {
