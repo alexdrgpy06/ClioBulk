@@ -7,7 +7,6 @@
  * It manages file permissions, orchestrates the asynchronous bulk 
  * processing pipeline, and handles real-time event emission for UI updates.
  */
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -16,6 +15,18 @@ use log::{info, error};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use crate::image_ops;
+
+const ALLOWED_EXTENSIONS: &[&str] = &["jpg", "jpeg", "png", "webp"];
+
+/// Validates that the file extension is safe.
+fn is_safe_path(path: &str) -> bool {
+    let path_obj = std::path::Path::new(path);
+    if let Some(ext) = path_obj.extension().and_then(|e| e.to_str()) {
+        ALLOWED_EXTENSIONS.contains(&ext.to_lowercase().as_str())
+    } else {
+        false
+    }
+}
 
 #[derive(Deserialize, Clone)]
 pub struct ProcessOptions {
@@ -99,6 +110,18 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    // Validate output extension for security
+    if !is_safe_path(&out_path) {
+        let err_msg = format!("Security Error: Invalid file extension for output: {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
@@ -201,4 +224,25 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_path() {
+        assert!(is_safe_path("test.jpg"));
+        assert!(is_safe_path("test.jpeg"));
+        assert!(is_safe_path("test.png"));
+        assert!(is_safe_path("test.webp"));
+        assert!(is_safe_path("TEST.JPG")); // Case insensitivity
+        assert!(is_safe_path("path/to/file.png"));
+
+        assert!(!is_safe_path("test.exe"));
+        assert!(!is_safe_path("test.sh"));
+        assert!(!is_safe_path("test"));
+        assert!(!is_safe_path("test.txt"));
+        assert!(!is_safe_path("test.html"));
+    }
 }
