@@ -7,7 +7,6 @@
  * It manages file permissions, orchestrates the asynchronous bulk 
  * processing pipeline, and handles real-time event emission for UI updates.
  */
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -58,7 +57,7 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
         return Err(format!("File not found: {}", path));
     }
 
-    let img = image_ops::decode_raw_to_image(&path)?;
+    let img = image_ops::decode_raw_preview(&path, 1200)?;
     let thumb = img.thumbnail(1200, 1200);
     
     let mut buffer = std::io::Cursor::new(Vec::new());
