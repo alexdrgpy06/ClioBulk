@@ -7,7 +7,6 @@
  * It manages file permissions, orchestrates the asynchronous bulk 
  * processing pipeline, and handles real-time event emission for UI updates.
  */
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -42,11 +41,28 @@ pub struct ProgressPayload {
     pub stage: String,
 }
 
+fn is_safe_extension(path: &str, allowed: &[&str]) -> bool {
+    let p = std::path::Path::new(path);
+    if let Some(ext) = p.extension() {
+        if let Some(ext_str) = ext.to_str() {
+            let ext_lower = ext_str.to_lowercase();
+            return allowed.contains(&ext_lower.as_str());
+        }
+    }
+    false
+}
+
 /// Decodes a RAW file for a preview display in the UI.
 /// Returns a base64-encoded thumbnail string.
 #[tauri::command]
 pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     info!("Decoding RAW file for preview: {}", path);
+
+    if !is_safe_extension(&path, &["arw", "cr2", "nef", "dng"]) {
+        let msg = format!("Unsupported RAW extension: {}", path);
+        error!("{}", msg);
+        return Err(msg);
+    }
 
     if !app.fs_scope().is_allowed(&path) {
         error!("Permission denied: {}", path);
@@ -99,6 +115,17 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !is_safe_extension(&out_path, &["jpg", "jpeg", "png", "webp"]) {
+        let err_msg = format!("Invalid file extension (write): {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
@@ -201,4 +228,23 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_extension() {
+        let allowed = ["jpg", "png"];
+        assert!(is_safe_extension("image.jpg", &allowed));
+        assert!(is_safe_extension("image.png", &allowed));
+        assert!(is_safe_extension("IMAGE.JPG", &allowed));
+        assert!(is_safe_extension("path/to/image.png", &allowed));
+
+        assert!(!is_safe_extension("image.txt", &allowed));
+        assert!(!is_safe_extension("image", &allowed));
+        assert!(!is_safe_extension("image.jpg.exe", &allowed));
+        assert!(!is_safe_extension("image.exe", &allowed));
+    }
 }
