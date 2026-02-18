@@ -8,6 +8,13 @@ export const useStore = create((set) => ({
   progress: 0,
   lut: null, // { size, data }
   watermark: null, // { image, text, opacity, rect }
+  processingOptions: {
+    brightness: 0.0,
+    contrast: 1.0,
+    saturation: 1.0,
+    adaptive_threshold: false,
+    denoise: false
+  },
   
   addFiles: (newFiles) => set((state) => ({ 
     files: [...state.files, ...newFiles.map(f => ({
@@ -25,6 +32,7 @@ export const useStore = create((set) => ({
 
   setLut: (lut) => set({ lut }),
   setWatermark: (watermark) => set({ watermark }),
+  setProcessingOptions: (options) => set({ processingOptions: options }),
   setProcessing: (processing) => set({ processing }),
   setProgress: (progress) => set({ progress }),
   
