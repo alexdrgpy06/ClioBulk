@@ -9,6 +9,15 @@ export const useStore = create((set) => ({
   lut: null, // { size, data }
   watermark: null, // { image, text, opacity, rect }
   
+  processingOptions: {
+    brightness: 0.0,
+    contrast: 1.0,
+    saturation: 1.0,
+    adaptive_threshold: false,
+    denoise: false
+  },
+  setProcessingOptions: (options) => set({ processingOptions: options }),
+
   addFiles: (newFiles) => set((state) => ({ 
     files: [...state.files, ...newFiles.map(f => ({
       file: f.file || null,
