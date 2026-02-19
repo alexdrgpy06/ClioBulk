@@ -68,6 +68,17 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     Ok(format!("data:image/jpeg;base64,{}", base64_str))
 }
 
+fn is_safe_extension(path: &str) -> bool {
+    std::path::Path::new(path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| {
+            let ext = ext.to_lowercase();
+            matches!(ext.as_str(), "jpg" | "jpeg" | "png" | "webp")
+        })
+        .unwrap_or(false)
+}
+
 /// Internal processing logic used by both single and bulk operations.
 pub fn process_image_inner<R: Runtime>(
     app: &AppHandle<R>,
@@ -85,6 +96,17 @@ pub fn process_image_inner<R: Runtime>(
             stage: stage.to_string(),
         });
     };
+
+    if !is_safe_extension(&out_path) {
+        let err_msg = format!("Security error: Invalid output extension for file: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
 
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
@@ -201,4 +223,38 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_extension() {
+        // Valid extensions
+        assert!(is_safe_extension("image.jpg"));
+        assert!(is_safe_extension("image.jpeg"));
+        assert!(is_safe_extension("image.png"));
+        assert!(is_safe_extension("image.webp"));
+
+        // Case insensitivity
+        assert!(is_safe_extension("IMAGE.JPG"));
+        assert!(is_safe_extension("image.PNG"));
+
+        // Paths
+        assert!(is_safe_extension("path/to/image.png"));
+        assert!(is_safe_extension("/absolute/path/image.webp"));
+
+        // Invalid extensions
+        assert!(!is_safe_extension("script.sh"));
+        assert!(!is_safe_extension("program.exe"));
+        assert!(!is_safe_extension("image.php"));
+        assert!(!is_safe_extension("image.js"));
+
+        // Edge cases
+        assert!(!is_safe_extension("image")); // No extension
+        assert!(!is_safe_extension("image.")); // Empty extension
+        assert!(!is_safe_extension(".bashrc")); // Hidden file
+        assert!(!is_safe_extension("image.jpg.exe")); // Double extension
+    }
 }
