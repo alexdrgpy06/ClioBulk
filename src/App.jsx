@@ -35,8 +35,9 @@ import { decodeRaw, isRaw } from './utils/raw-decoder';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { open } from '@tauri-apps/plugin-dialog';
-import { downloadDir } from '@tauri-apps/api/path';
+import { downloadDir, join } from '@tauri-apps/api/path';
 import { logger } from './utils/logger';
+import { sanitizeFilename } from './utils/security';
 import ProgressBar from './components/ProgressBar';
 import { useShallow } from 'zustand/react/shallow';
 
@@ -311,15 +312,23 @@ function App() {
       // EXECUTE VIA RUST NATIVE CORE
       try {
         const outBase = await downloadDir();
-        const filesToProcess = files
-          .filter(f => f.status !== 'complete')
-          .map(f => {
-            const inputPath = f.path || f.file?.name;
-            const fileName = f.name;
-            const nameWithoutExt = fileName.lastIndexOf('.') !== -1 ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
-            const outputPath = `${outBase}\\processed_${nameWithoutExt}.jpg`;
-            return [inputPath, outputPath];
-          });
+
+        // Securely construct paths using join() and sanitized filenames
+        // Use Promise.all to handle async path construction
+        const filesToProcess = await Promise.all(
+          files
+            .filter(f => f.status !== 'complete')
+            .map(async (f) => {
+              const inputPath = f.path || f.file?.name;
+              const fileName = f.name;
+              const nameWithoutExt = fileName.lastIndexOf('.') !== -1 ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
+
+              const sanitizedName = sanitizeFilename(nameWithoutExt);
+              const outputPath = await join(outBase, `processed_${sanitizedName}.jpg`);
+
+              return [inputPath, outputPath];
+            })
+        );
         
         if (filesToProcess.length === 0) { setProcessing(false); return; }
 
