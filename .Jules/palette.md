@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2025-02-18 - [Detached Range Labels]
+**Learning:** The settings panel uses a visual pattern of label + value + slider, but the label and value are disconnected from the input in the DOM, making screen readers announce "slider" without context or value.
+**Action:** Connect labels with `htmlFor`/`id` and use `aria-valuetext` to bridge the gap between visual value display and screen reader announcement.
