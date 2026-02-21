@@ -68,6 +68,15 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     Ok(format!("data:image/jpeg;base64,{}", base64_str))
 }
 
+/// Validates that the output file has a safe image extension.
+fn is_safe_extension(path: &str) -> bool {
+    let path_lc = path.to_lowercase();
+    path_lc.ends_with(".jpg") ||
+    path_lc.ends_with(".jpeg") ||
+    path_lc.ends_with(".png") ||
+    path_lc.ends_with(".webp")
+}
+
 /// Internal processing logic used by both single and bulk operations.
 pub fn process_image_inner<R: Runtime>(
     app: &AppHandle<R>,
@@ -99,6 +108,17 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !is_safe_extension(&out_path) {
+        let err_msg = format!("Invalid output extension: {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
@@ -201,4 +221,25 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_extension() {
+        assert!(is_safe_extension("image.jpg"));
+        assert!(is_safe_extension("image.jpeg"));
+        assert!(is_safe_extension("image.png"));
+        assert!(is_safe_extension("image.webp"));
+        assert!(is_safe_extension("IMAGE.JPG")); // Case insensitive
+        assert!(is_safe_extension("/path/to/image.png"));
+
+        assert!(!is_safe_extension("image.txt"));
+        assert!(!is_safe_extension("image.exe"));
+        assert!(!is_safe_extension("image.sh"));
+        assert!(!is_safe_extension("image"));
+        assert!(!is_safe_extension("image.jpg.exe"));
+    }
 }
