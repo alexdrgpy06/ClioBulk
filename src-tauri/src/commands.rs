@@ -50,12 +50,12 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
 
     if !app.fs_scope().is_allowed(&path) {
         error!("Permission denied: {}", path);
-        return Err(format!("Permission denied: {}", path));
+        return Err("Permission denied accessing file".to_string());
     }
     
     if !std::path::Path::new(&path).exists() {
         error!("RAW file not found: {}", path);
-        return Err(format!("File not found: {}", path));
+        return Err("File not found".to_string());
     }
 
     let img = image_ops::decode_raw_to_image(&path)?;
@@ -66,6 +66,18 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     
     let base64_str = general_purpose::STANDARD.encode(buffer.into_inner());
     Ok(format!("data:image/jpeg;base64,{}", base64_str))
+}
+
+/// Helper to validate output extensions for security.
+fn is_safe_extension(path: &str) -> bool {
+    let path_buf = std::path::Path::new(path);
+    if let Some(ext) = path_buf.extension() {
+        if let Some(ext_str) = ext.to_str() {
+            let ext_lower = ext_str.to_lowercase();
+            return matches!(ext_lower.as_str(), "jpg" | "jpeg" | "png" | "webp");
+        }
+    }
+    false
 }
 
 /// Internal processing logic used by both single and bulk operations.
@@ -86,9 +98,20 @@ pub fn process_image_inner<R: Runtime>(
         });
     };
 
+    if !is_safe_extension(&out_path) {
+        let err_msg = "Invalid output file extension. Allowed: jpg, jpeg, png, webp".to_string();
+        error!("Security violation: {}", out_path);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&path) {
-        let err_msg = format!("Permission denied (read): {}", path);
-        error!("{}", err_msg);
+        let err_msg = "Permission denied accessing input file".to_string();
+        error!("Permission denied (read): {}", path);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
             success: false,
@@ -98,8 +121,8 @@ pub fn process_image_inner<R: Runtime>(
     }
 
     if !app.fs_scope().is_allowed(&out_path) {
-        let err_msg = format!("Permission denied (write): {}", out_path);
-        error!("{}", err_msg);
+        let err_msg = "Permission denied accessing output file".to_string();
+        error!("Permission denied (write): {}", out_path);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
             success: false,
@@ -201,4 +224,26 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
     
     info!("Bulk process completed successfully.");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_safe_extension() {
+        assert!(is_safe_extension("image.jpg"));
+        assert!(is_safe_extension("image.jpeg"));
+        assert!(is_safe_extension("image.png"));
+        assert!(is_safe_extension("image.webp"));
+        assert!(is_safe_extension("IMAGE.JPG"));
+        assert!(is_safe_extension("path/to/image.png"));
+
+        assert!(!is_safe_extension("image.exe"));
+        assert!(!is_safe_extension("image.sh"));
+        assert!(!is_safe_extension("image.js"));
+        assert!(!is_safe_extension("image"));
+        assert!(!is_safe_extension("image.txt"));
+        assert!(!is_safe_extension("image.php"));
+    }
 }
