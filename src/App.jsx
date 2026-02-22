@@ -391,6 +391,8 @@ function App() {
           <button 
             onClick={() => setShowSettings(!showSettings)}
             aria-label="Toggle Settings"
+            aria-expanded={showSettings}
+            aria-controls="settings-panel"
             className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${showSettings ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700'}`}
           >
             <Settings size={18} />
@@ -415,7 +417,11 @@ function App() {
 
       <div className="flex-1 flex overflow-hidden">
         {showSettings && (
-          <aside className="w-80 border-r border-zinc-800 p-6 overflow-y-auto bg-zinc-950 animate-in slide-in-from-left duration-300">
+          <aside
+            id="settings-panel"
+            aria-label="Image Processing Settings"
+            className="w-80 border-r border-zinc-800 p-6 overflow-y-auto bg-zinc-950 animate-in slide-in-from-left duration-300"
+          >
             <h2 className="text-lg font-bold mb-6 flex items-center gap-2"><Settings size={20} className="text-blue-500" />Options</h2>
             <div className="space-y-8">
               <section>
@@ -430,16 +436,16 @@ function App() {
                 <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ImageIcon size={14} />Adjustments</h3>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Brightness</label><span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span></div>
-                    <input type="range" min="-1" max="1" step="0.1" value={processingOptions.brightness} onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label htmlFor="brightness-slider" className="text-zinc-400">Brightness</label><span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span></div>
+                    <input id="brightness-slider" aria-valuetext={`${(processingOptions.brightness * 100).toFixed(0)}%`} type="range" min="-1" max="1" step="0.1" value={processingOptions.brightness} onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Contrast</label><span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="3" step="0.1" value={processingOptions.contrast} onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label htmlFor="contrast-slider" className="text-zinc-400">Contrast</label><span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span></div>
+                    <input id="contrast-slider" aria-valuetext={`${processingOptions.contrast.toFixed(1)}x`} type="range" min="0" max="3" step="0.1" value={processingOptions.contrast} onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Saturation</label><span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="2" step="0.1" value={processingOptions.saturation} onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label htmlFor="saturation-slider" className="text-zinc-400">Saturation</label><span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span></div>
+                    <input id="saturation-slider" aria-valuetext={`${processingOptions.saturation.toFixed(1)}x`} type="range" min="0" max="2" step="0.1" value={processingOptions.saturation} onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
                   </div>
                 </div>
               </section>
