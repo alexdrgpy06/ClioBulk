@@ -5,10 +5,21 @@ export const useStore = create((set) => ({
   files: [],
   processing: false,
   processedFiles: {}, // id -> blob
+  processingOptions: {
+    brightness: 0.0,
+    contrast: 1.0,
+    saturation: 1.0,
+    adaptive_threshold: false,
+    denoise: false
+  },
   progress: 0,
   lut: null, // { size, data }
   watermark: null, // { image, text, opacity, rect }
   
+  setProcessingOptions: (options) => set((state) => ({
+    processingOptions: { ...state.processingOptions, ...options }
+  })),
+
   addFiles: (newFiles) => set((state) => ({ 
     files: [...state.files, ...newFiles.map(f => ({
       file: f.file || null,
