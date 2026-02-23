@@ -45,7 +45,7 @@ pub struct ProgressPayload {
 /// Decodes a RAW file for a preview display in the UI.
 /// Returns a base64-encoded thumbnail string.
 #[tauri::command]
-pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
+pub async fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     info!("Decoding RAW file for preview: {}", path);
 
     if !app.fs_scope().is_allowed(&path) {
@@ -163,7 +163,7 @@ pub fn process_image_inner<R: Runtime>(
 
 /// Processes a single image file.
 #[tauri::command]
-pub fn process_image(app: AppHandle, path: String, out_path: String, options: ProcessOptions) -> ProcessResult {
+pub async fn process_image(app: AppHandle, path: String, out_path: String, options: ProcessOptions) -> ProcessResult {
     process_image_inner(&app, path, out_path, options, 100.0)
 }
 
