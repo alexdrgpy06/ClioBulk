@@ -152,7 +152,9 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
     // 2. Combined Adjustments (Brightness, Contrast, Saturation)
     // Fused loop for performance: iterates pixels once and avoids intermediate buffers.
     if options.brightness != 0.0 || options.contrast != 1.0 || options.saturation != 1.0 {
-        let mut rgb_img = img.to_rgb8();
+        // OPTIMIZATION: Use into_rgb8() to consume the DynamicImage without cloning the buffer
+        // if it is already in Rgb8 format. This saves ~72MB of allocation per 24MP image.
+        let mut rgb_img = img.into_rgb8();
         let raw_pixels = rgb_img.as_mut();
 
         let brightness_offset = options.brightness * 100.0;
