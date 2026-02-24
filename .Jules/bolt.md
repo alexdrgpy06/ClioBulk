@@ -1,0 +1,3 @@
+## 2026-02-24 - Optimizing High-Frequency UI State
+**Learning:** Moving high-frequency state updates (like slider dragging for brightness/contrast) out of the root `App` component prevents the entire application tree from re-rendering on every frame.
+**Action:** When implementing real-time adjustments, ensure the state is either local to the control component or subscribed to selectively via a store (like Zustand), so that parent components containing expensive lists (like `files`) do not re-render unnecessarily. Accessing the latest state imperatively (e.g., `useStore.getState()`) in callbacks avoids stale closures without triggering re-renders.
