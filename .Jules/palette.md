@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2026-02-25 - [Range Input Accessibility]
+**Learning:** Native range inputs (`<input type="range">`) announce raw numeric values by default, which can be confusing when the UI displays formatted values (e.g., percentages or multipliers).
+**Action:** Always add `aria-valuetext` to range inputs when the displayed value differs from the raw input value, providing screen reader users with the same context as visual users.
