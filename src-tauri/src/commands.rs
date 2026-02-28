@@ -68,6 +68,14 @@ pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     Ok(format!("data:image/jpeg;base64,{}", base64_str))
 }
 
+fn is_safe_extension(path: &str) -> bool {
+    let lower_path = path.to_lowercase();
+    lower_path.ends_with(".jpg") ||
+    lower_path.ends_with(".jpeg") ||
+    lower_path.ends_with(".png") ||
+    lower_path.ends_with(".webp")
+}
+
 /// Internal processing logic used by both single and bulk operations.
 pub fn process_image_inner<R: Runtime>(
     app: &AppHandle<R>,
@@ -88,6 +96,17 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !is_safe_extension(&out_path) {
+        let err_msg = format!("Invalid or unsafe output file extension: {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
