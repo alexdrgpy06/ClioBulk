@@ -1,0 +1,3 @@
+## 2024-05-24 - Bypass React Render Cycle for High-Frequency Progress Updates
+**Learning:** High-frequency state updates like a progress bar driven by hundreds of processing events from a backend (Tauri or Web Worker) can completely block the main thread and cause UI jitter when using React's default render cycle via state hooks (like Zustand's `useStore`).
+**Action:** For high-frequency non-interactive UI elements (like progress bars), bypass React state entirely. Subscribe directly to the store (`useStore.subscribe`) inside a `useEffect` and manually update the DOM via a `useRef`. This provides a massive performance boost by skipping the React reconciliation process thousands of times per batch.
