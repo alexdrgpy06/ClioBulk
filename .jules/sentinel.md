@@ -1,0 +1,4 @@
+## 2026-03-01 - [Arbitrary File Write Prevention]
+**Vulnerability:** The application allowed outputting images to arbitrary file extensions in `process_image_inner`. While Tauri `fs_scope` prevented directory traversal outside allowed scopes, the lack of file extension validation meant a user could potentially overwrite or create configuration files, scripts, or executables if an allowed scope covered sensitive directories.
+**Learning:** `app.fs_scope().is_allowed()` only validates that the path is within an allowed directory tree, it does not validate the file type or extension. Explicit validation of file extensions is required in Rust commands handling file writing.
+**Prevention:** Implemented an `is_safe_extension` helper in a new `security` module and explicitly checked the `out_path` extension against a safelist (`jpg`, `jpeg`, `png`, `webp`) in `process_image_inner`.
