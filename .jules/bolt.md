@@ -1,0 +1,3 @@
+## 2024-06-25 - High-Frequency State Updates and React Render Cycle Bypassing
+**Learning:** During batch processing, rapid updates to the global state representing the progress percentage were causing unnecessary, high-frequency re-renders in React via `useStore` hooks. Bypassing React’s render cycle by subscribing directly to the Zustand store using `useStore.subscribe` and altering DOM elements using a `useRef` provides a highly efficient update path.
+**Action:** Implemented `useRef` directly on the `ProgressBar` indicator and established a direct subscription to the Zustand store. Included proper ARIA attribute updates (`aria-valuenow`) directly on the ref node.
