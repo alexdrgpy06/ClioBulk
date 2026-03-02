@@ -1,0 +1,3 @@
+## 2025-03-02 - Direct DOM Mutation via Zustand
+**Learning:** For high-frequency state updates like progress bars during bulk operations, React's render cycle can become a bottleneck. The previous implementation in `ProgressBar.jsx` used `useStore` with `useShallow`, which still triggered React renders on every progress tick.
+**Action:** Replaced React state binding with direct `useStore.subscribe()` and `useRef` to manipulate the DOM manually. This prevents React from tracking the state and avoids hundreds of re-renders per second, significantly freeing up the main thread. Also, ensure ARIA attributes are consolidated on the same node being manipulated by the ref, per previous memory instructions.
