@@ -1,0 +1,3 @@
+## 2024-03-14 - Bypass React Render Cycle for High-Frequency Store Updates
+**Learning:** In a performance-critical image processing application, subscribing directly to high-frequency state updates (like progress bars) via React hooks causes significant UI thread blockage due to constant re-rendering.
+**Action:** When mapping rapidly changing numerical values to single DOM properties (like style.width), bypass React's render loop. Subscribe directly to the Zustand store (`useStore.subscribe`) and mutate the DOM node directly using a `useRef`. This offloads work from React's reconciliation engine.
