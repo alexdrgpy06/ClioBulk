@@ -1,6 +1,6 @@
-use app_lib::image_ops::apply_filters;
 use app_lib::commands::ProcessOptions;
-use image::{DynamicImage, RgbImage, Rgb};
+use app_lib::image_ops::apply_filters;
+use image::{DynamicImage, Rgb, RgbImage};
 
 #[test]
 fn test_brightness_adjustment() {
@@ -9,7 +9,7 @@ fn test_brightness_adjustment() {
         *pixel = Rgb([100, 100, 100]);
     }
     let dyn_img = DynamicImage::ImageRgb8(img);
-    
+
     let options = ProcessOptions {
         brightness: 0.5, // Increase brightness
         contrast: 1.0,
@@ -17,10 +17,10 @@ fn test_brightness_adjustment() {
         adaptive_threshold: false,
         denoise: false,
     };
-    
+
     let result = apply_filters(dyn_img, &options);
     let result_rgb = result.to_rgb8();
-    
+
     // Check if the first pixel is brighter than 100
     assert!(result_rgb.get_pixel(0, 0)[0] > 100);
 }
@@ -32,7 +32,7 @@ fn test_contrast_adjustment() {
         *pixel = Rgb([100, 100, 100]);
     }
     let dyn_img = DynamicImage::ImageRgb8(img);
-    
+
     let options = ProcessOptions {
         brightness: 0.0,
         contrast: 1.5, // Increase contrast
@@ -40,7 +40,7 @@ fn test_contrast_adjustment() {
         adaptive_threshold: false,
         denoise: false,
     };
-    
+
     let result = apply_filters(dyn_img, &options);
     // For a uniform image, contrast adjustment might not change much if it's centered around 128,
     // but brighten/contrast usually shift values.
@@ -51,7 +51,7 @@ fn test_contrast_adjustment() {
 fn test_denoise() {
     let img = RgbImage::new(10, 10);
     let dyn_img = DynamicImage::ImageRgb8(img);
-    
+
     let options = ProcessOptions {
         brightness: 0.0,
         contrast: 1.0,
@@ -59,7 +59,7 @@ fn test_denoise() {
         adaptive_threshold: false,
         denoise: true,
     };
-    
+
     let result = apply_filters(dyn_img, &options);
     assert!(result.width() == 10);
 }
@@ -68,7 +68,7 @@ fn test_denoise() {
 fn test_adaptive_threshold() {
     let img = RgbImage::new(10, 10);
     let dyn_img = DynamicImage::ImageRgb8(img);
-    
+
     let options = ProcessOptions {
         brightness: 0.0,
         contrast: 1.0,
@@ -76,7 +76,7 @@ fn test_adaptive_threshold() {
         adaptive_threshold: true,
         denoise: false,
     };
-    
+
     let result = apply_filters(dyn_img, &options);
     // Adaptive threshold returns a Luma image (grayscale/binary)
     assert!(result.as_luma8().is_some());
