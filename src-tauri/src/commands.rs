@@ -108,6 +108,19 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // Security: Validate the output file extension to prevent arbitrary file writes
+    // (e.g. users attempting to save files as .sh, .exe, etc.)
+    if !crate::security::is_safe_extension(&out_path) {
+        let err_msg = "Output file uses an unsafe extension. Only image formats are allowed.".to_string();
+        error!("Security violation: {}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
