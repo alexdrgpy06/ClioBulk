@@ -185,6 +185,7 @@ function App() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [isTauri, setIsTauri] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -245,6 +246,28 @@ function App() {
   const handleFileChange = useCallback((e) => {
     const selectedFiles = Array.from(e.target.files).map(f => ({ file: f, name: f.name }));
     addFiles(selectedFiles);
+  }, [addFiles]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    // In Tauri, native file drop is handled via tauri events, but for web fallback
+    // or native HTML drop events, we process the dropped files here
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const droppedFiles = Array.from(e.dataTransfer.files).map(f => ({ file: f, name: f.name }));
+      addFiles(droppedFiles);
+    }
   }, [addFiles]);
 
   const handleTauriFileOpen = useCallback(async () => {
@@ -449,10 +472,15 @@ function App() {
 
         <main className="flex-1 overflow-y-auto p-8 bg-black custom-scrollbar">
           {files.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center">
-              <div className="max-w-md w-full border-2 border-dashed border-zinc-800 rounded-[2rem] p-12 flex flex-col items-center text-center gap-4 hover:border-zinc-700 hover:bg-zinc-900/50 transition-all group">
-                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-xl">
-                  <Upload className="text-zinc-500 group-hover:text-blue-500 transition-colors" />
+            <div
+              className="h-full flex flex-col items-center justify-center"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+            >
+              <div className={`max-w-md w-full border-2 border-dashed rounded-[2rem] p-12 flex flex-col items-center text-center gap-4 transition-all group ${isDragging ? 'border-blue-500 bg-blue-500/10 scale-[1.02]' : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50'}`}>
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 transition-transform shadow-xl ${isDragging ? 'bg-blue-600/20 scale-110' : 'bg-zinc-900 group-hover:scale-110'}`}>
+                  <Upload className={`transition-colors ${isDragging ? 'text-blue-500' : 'text-zinc-500 group-hover:text-blue-500'}`} />
                 </div>
                 <div>
                   <h2 className="text-xl font-bold mb-1">Drop your photos here</h2>
