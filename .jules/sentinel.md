@@ -1,0 +1,4 @@
+## 2024-03-05 - Add explicit file extension validation to prevent arbitrary file writes
+**Vulnerability:** The application previously relied only on directory scope checks (`app.fs_scope().is_allowed()`) for file write paths (`out_path`). This is insufficient because an attacker could bypass it to write non-image files if the destination folder was allowed, potentially leading to arbitrary file write vulnerabilities (e.g. overwriting an executable or a configuration file).
+**Learning:** Even when using built-in security mechanisms like Tauri's `fs_scope`, we must ensure explicit validation of the requested action—in this case, verifying that the output file extension matches an expected image format.
+**Prevention:** Add a strict, explicit check for safe file extensions (`jpg`, `jpeg`, `png`, `webp`) before writing any file to disk, regardless of whether the output directory falls within the permitted filesystem scope.
