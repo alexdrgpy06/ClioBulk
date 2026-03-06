@@ -108,6 +108,17 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    if !crate::security::is_safe_extension(&out_path) {
+        let err_msg = format!("Invalid or unsafe output file extension: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
