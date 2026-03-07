@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2024-10-24 - [Accessible Range Sliders]
+**Learning:** Standard HTML5 range inputs (`<input type="range">`) only announce their raw numeric value to screen readers, which is confusing if the value represents a percentage or a multiplier (e.g., "1.5" instead of "1.5x" or "-0.5" instead of "-50%").
+**Action:** Always provide `aria-valuetext` to announce human-readable values to screen readers and explicitly link labels to their inputs using `htmlFor` and `id`.
