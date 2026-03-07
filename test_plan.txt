@@ -1,0 +1,5 @@
+1. Modify `src-tauri/src/commands.rs` to add `is_safe_extension` check inside `process_image_inner` before calling `img.save(&out_path)`.
+   - Update `process_image_inner` to use `crate::security::is_safe_extension` check on `out_path` to prevent arbitrary file writes.
+   - If the extension is not safe, emit a failed event and return an error result.
+2. Complete pre-commit steps.
+3. Submit the change.
