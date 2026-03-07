@@ -15,7 +15,7 @@ use tauri_plugin_fs::FsExt;
 use log::{info, error};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
-use crate::image_ops;
+use crate::{image_ops, security};
 
 #[derive(Deserialize, Clone)]
 pub struct ProcessOptions {
@@ -99,6 +99,17 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !security::is_safe_extension(&out_path) {
+        let err_msg = format!("Permission denied: Invalid file extension for {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
