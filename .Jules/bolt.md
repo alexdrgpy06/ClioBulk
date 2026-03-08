@@ -1,0 +1,3 @@
+## 2024-05-24 - High-Frequency Native Events vs React Re-renders
+**Learning:** Subscribing to Zustand state (`progress`) that updates rapidly from a native backend (like Tauri's `process-progress` events) causes excessive React component tree re-renders, creating a significant main-thread bottleneck.
+**Action:** For high-frequency UI updates (like progress bars or real-time metrics), bypass React's render cycle completely. Only subscribe to the boolean trigger state (`processing`) via React hooks. Then use `useStore.subscribe` within a `useEffect` combined with a `useRef` to directly manipulate DOM node styles (e.g., `ref.current.style.width`) and ARIA attributes (e.g., `ref.current.setAttribute('aria-valuenow', ...)`).
