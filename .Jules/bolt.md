@@ -1,0 +1,3 @@
+## 2024-11-20 - High-Frequency Zustand Updates cause React Render Bottleneck
+**Learning:** In React with Zustand, components mapping fast-changing state (e.g. `progress` at ~60+ updates/sec during batch processing) directly to props will force complete re-renders of the component tree, causing significant CPU bottlenecks and stutter. React's rendering cycle cannot keep up with high-frequency native/worker messages.
+**Action:** For high-frequency visual updates (like progress bars), bypass React's render loop. Subscribe directly via `useStore.subscribe` in a `useEffect` and manipulate a DOM node via `useRef` directly (`ref.current.style.width = ...`). This achieves O(1) DOM updates.
