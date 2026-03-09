@@ -97,6 +97,17 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    if !crate::security::is_safe_extension(&out_path) {
+        let err_msg = format!("Permission denied (invalid extension): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
         error!("{}", err_msg);
