@@ -1,0 +1,3 @@
+## 2024-03-10 - Unnecessary Render Thrashing on High-Frequency Updates
+**Learning:** For high-frequency UI updates like progress bars during batch processing, relying on React's render cycle by subscribing to a Zustand store (`useStore(state => state.progress)`) causes severe render thrashing. This is because every tick of progress triggers a React re-render, degrading performance.
+**Action:** Bypass React's render cycle for high-frequency UI updates by subscribing directly to the Zustand store using `useStore.subscribe` within a `useEffect`. Combine this with a `useRef` to manipulate the DOM node's `style` directly, significantly improving performance without sacrificing correctness.
