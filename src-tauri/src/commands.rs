@@ -16,6 +16,7 @@ use log::{info, error};
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use crate::image_ops;
+use crate::security;
 
 #[derive(Deserialize, Clone)]
 pub struct ProcessOptions {
@@ -88,6 +89,17 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !security::is_safe_extension(&out_path) {
+        let err_msg = format!("Invalid output file extension: {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
