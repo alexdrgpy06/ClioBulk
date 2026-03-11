@@ -1,5 +1,6 @@
 pub mod commands;
 pub mod image_ops;
+pub mod security;
 
 use tauri_plugin_log::Builder as LogBuilder;
 

@@ -1,4 +1,9 @@
-## 2024-05-22 - Filesystem Scope Bypass in Rust Commands
-**Vulnerability:** Custom Rust commands using standard `std::fs` or library IO functions (like `image::open`) bypass Tauri's filesystem scope checks defined in `capabilities`.
-**Learning:** Tauri's security model (scopes) only applies automatically to its JS API. Backend commands must manually enforce scopes using `app.fs_scope().is_allowed()`.
-**Prevention:** Always inject `AppHandle` into filesystem-related commands and validate paths against the scope before operation.
+## 2024-03-11 - Enforce Safe File Extensions
+**Vulnerability:** Arbitrary file write due to unrestricted output file extension in image processing commands.
+**Learning:** `process_image_inner` in `src-tauri/src/commands.rs` relies on `app.fs_scope().is_allowed(&out_path)` which only checks directory permissions, not file extensions. This allows writing arbitrary file types (e.g., executable scripts) if the user has write access to the directory.
+**Prevention:** Implement and use a `is_safe_extension` helper function to strictly validate output file extensions (e.g., jpg, jpeg, png, webp) before attempting to save the image.
+
+## 2024-03-11 - Enforce Safe File Extensions
+**Vulnerability:** Arbitrary file write due to unrestricted output file extension in image processing commands.
+**Learning:** `process_image_inner` in `src-tauri/src/commands.rs` relies on `app.fs_scope().is_allowed(&out_path)` which only checks directory permissions, not file extensions. This allows writing arbitrary file types (e.g., executable scripts) if the user has write access to the directory.
+**Prevention:** Implement and use a `is_safe_extension` helper function to strictly validate output file extensions (e.g., jpg, jpeg, png, webp) before attempting to save the image.
