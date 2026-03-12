@@ -187,6 +187,7 @@ function App() {
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const filesMapRef = useRef(new Map());
 
   /**
    * Environment Detection & Event Listener Setup
@@ -206,7 +207,11 @@ function App() {
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
             // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
+            // ⚡ Bolt Optimization: Use O(1) Map lookup instead of O(N) array search.
+            let fileItem = filesMapRef.current.get(path);
+            if (!fileItem) {
+               fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
+            }
             if (fileItem) {
               updateFileStatus(fileItem.id, success ? 'complete' : 'error');
             }
@@ -304,6 +309,15 @@ function App() {
    * Core Processing Pipeline Orchestrator
    */
   const startProcessing = useCallback(async () => {
+    // ⚡ Bolt Optimization: Populate the files map for O(1) lookup during high-frequency progress events
+    filesMapRef.current.clear();
+    files.forEach(f => {
+      const key = f.path || f.file?.name;
+      if (key) {
+        filesMapRef.current.set(key, f);
+      }
+    });
+
     setProcessing(true);
     setProgress(0);
 
