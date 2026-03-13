@@ -1,0 +1,3 @@
+## 2026-03-13 - Bypass React renders for high-frequency UI updates
+**Learning:** High-frequency state updates in Zustand (like progress bars during batch processing) will trigger React renders for every tick if components subscribe via `useStore(state => state.value)`. This causes significant main thread blocking and lag.
+**Action:** For high-frequency continuous updates (progress bars, canvas drawings), bypass React entirely by subscribing directly to the store via `useStore.subscribe` and mutating a DOM node's style directly using a `useRef`. Update ARIA attributes manually to maintain accessibility.
