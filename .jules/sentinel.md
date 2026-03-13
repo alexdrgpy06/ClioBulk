@@ -1,0 +1,4 @@
+## 2024-05-24 - [Arbitrary File Write via Unvalidated Output Extension]
+**Vulnerability:** The `process_image_inner` command in `src-tauri/src/commands.rs` accepted any `out_path` provided by the frontend without validating the file extension, potentially allowing an attacker to overwrite critical files or write executable files (like `.exe`, `.sh`) if they bypass frontend validation.
+**Learning:** Even if the frontend controls the UI for saving files, the backend Tauri command must strictly validate the output path's extension to enforce application-level boundaries and prevent arbitrary file writes.
+**Prevention:** Implement an `is_safe_extension` helper in `security.rs` and always validate the `out_path` extension against an allowlist (e.g., `.jpg`, `.png`) before writing any data to the disk in backend commands.
