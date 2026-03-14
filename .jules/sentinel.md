@@ -1,0 +1,4 @@
+## 2024-05-24 - Unhandled Panics in Tokio Tasks cause DoS
+**Vulnerability:** The backend `process_bulk` command was using `.unwrap()` on async task closures and semaphore acquisitions, making the entire bulk process and worker thread vulnerable to unexpected panics. This could lead to a Denial of Service.
+**Learning:** Tokio task panics propagate as `JoinError`s. Using `.unwrap()` on an awaited `JoinHandle` converts task-level panics into thread-level panics that crash the Tauri backend process or drop background processes without recovery.
+**Prevention:** Handle async responses and semaphores using matches instead of `.unwrap()`. Capture task execution results, format error strings gracefully, and emit failure events natively via Tauri's IPC to ensure the UI stays informed and the backend stays active.
