@@ -185,6 +185,7 @@ function App() {
 
   const [showSettings, setShowSettings] = useState(false);
   const [isTauri, setIsTauri] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -262,6 +263,30 @@ function App() {
         }
     } catch (err) {
         alert(`Dialog Error: ${err}`);
+    }
+  }, [addFiles]);
+
+  const handleDragOver = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  const handleDragLeave = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+  }, []);
+
+  const handleDrop = useCallback((e) => {
+    e.preventDefault();
+    setIsDragging(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const selectedFiles = Array.from(e.dataTransfer.files).map(f => ({
+        file: f,
+        name: f.name,
+        path: f.path // Some environments like Tauri inject the real path into the File object
+      }));
+      addFiles(selectedFiles);
     }
   }, [addFiles]);
 
@@ -450,12 +475,23 @@ function App() {
         <main className="flex-1 overflow-y-auto p-8 bg-black custom-scrollbar">
           {files.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center">
-              <div className="max-w-md w-full border-2 border-dashed border-zinc-800 rounded-[2rem] p-12 flex flex-col items-center text-center gap-4 hover:border-zinc-700 hover:bg-zinc-900/50 transition-all group">
-                <div className="w-16 h-16 bg-zinc-900 rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-xl">
-                  <Upload className="text-zinc-500 group-hover:text-blue-500 transition-colors" />
+              <div
+                className={`max-w-md w-full border-2 border-dashed rounded-[2rem] p-12 flex flex-col items-center text-center gap-4 transition-all group ${
+                  isDragging
+                    ? 'border-blue-500 bg-blue-500/10 scale-105'
+                    : 'border-zinc-800 hover:border-zinc-700 hover:bg-zinc-900/50'
+                }`}
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-2 transition-transform shadow-xl ${
+                  isDragging ? 'bg-blue-500/20 scale-110' : 'bg-zinc-900 group-hover:scale-110'
+                }`}>
+                  <Upload className={`transition-colors ${isDragging ? 'text-blue-400' : 'text-zinc-500 group-hover:text-blue-500'}`} />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold mb-1">Drop your photos here</h2>
+                  <h2 className="text-xl font-bold mb-1">{isDragging ? 'Drop to add files' : 'Drop your photos here'}</h2>
                   <p className="text-zinc-500 text-sm">RAW, JPEG, or PNG. Everything stays on your device.</p>
                 </div>
                 <button
