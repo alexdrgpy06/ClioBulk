@@ -1,0 +1,3 @@
+## 2024-05-24 - [O(1) Map Lookup for High-Frequency Events]
+**Learning:** When handling high-frequency Tauri events (like `process-progress` updates) in React that correlate with list items, using `Array.prototype.find()` creates an `O(N^2)` time complexity bottleneck that blocks the main thread.
+**Action:** Always use an `O(1)` lookup mechanism (e.g., a pre-populated `useRef(new Map())`) to lookup correlation IDs when dealing with high-frequency event updates to prevent unnecessary main thread blocking and performance issues.
