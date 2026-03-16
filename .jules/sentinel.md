@@ -1,0 +1,4 @@
+## 2024-05-24 - Restrict Arbitrary File Writes in process_image_inner
+**Vulnerability:** The backend `process_image_inner` function allowed arbitrary file creation because it only validated directory access via `fs_scope()` but did not validate the output file extension. A malicious payload could potentially instruct the backend to create an executable (e.g., `.sh`, `.bat`) or a system configuration file.
+**Learning:** `fs_scope` only prevents an app from reading/writing directories it shouldn't access. It does not enforce structural integrity on the files written within allowed boundaries. Both directory boundaries and file-type boundaries must be explicitly secured.
+**Prevention:** To prevent arbitrary file writes when generating files (e.g., in `process_image_inner`), explicitly validate and strictly whitelist output file extensions against safe formats (e.g., .jpg, .png, .webp).
