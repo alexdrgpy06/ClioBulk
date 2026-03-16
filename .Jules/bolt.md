@@ -1,0 +1,3 @@
+## 2026-03-16 - O(1) Map Lookups for High-Frequency Tauri IPC Events
+**Learning:** Found an O(N²) time complexity bottleneck when correlating high-frequency Tauri backend `process-progress` events with React UI state arrays. Searching a large array (`files.find()`) for every completion/error event blocks the main thread during bulk processing of large datasets.
+**Action:** Always pre-compute and store an O(1) lookup Map (e.g., using `useRef(new Map())`) before initiating large batch tasks. Use this Map to quickly correlate incoming backend events with corresponding UI entities without traversing lists sequentially.
