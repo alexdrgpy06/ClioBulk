@@ -1,4 +1,4 @@
-## 2024-05-22 - Filesystem Scope Bypass in Rust Commands
-**Vulnerability:** Custom Rust commands using standard `std::fs` or library IO functions (like `image::open`) bypass Tauri's filesystem scope checks defined in `capabilities`.
-**Learning:** Tauri's security model (scopes) only applies automatically to its JS API. Backend commands must manually enforce scopes using `app.fs_scope().is_allowed()`.
-**Prevention:** Always inject `AppHandle` into filesystem-related commands and validate paths against the scope before operation.
+## 2026-03-17 - Arbitrary File Write via Image Output
+**Vulnerability:** The `process_image_inner` Rust command permitted writing files with any extension (e.g., .exe, .sh, .html) because it did not validate the `out_path` suffix.
+**Learning:** Even if the filesystem scope is checked via `app.fs_scope().is_allowed()`, allowing arbitrary file extensions when saving image data can be exploited to overwrite configuration files or drop malicious executables if the output directory is broad (e.g., user home directory).
+**Prevention:** Explicitly validate and whitelist output file extensions against safe image formats (e.g., .jpg, .png, .webp) before attempting to save the file.
