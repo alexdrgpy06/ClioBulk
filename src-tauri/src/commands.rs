@@ -97,6 +97,23 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    let out_path_lc = out_path.to_lowercase();
+    let valid_ext = out_path_lc.ends_with(".jpg") ||
+                    out_path_lc.ends_with(".jpeg") ||
+                    out_path_lc.ends_with(".png") ||
+                    out_path_lc.ends_with(".webp");
+
+    if !valid_ext {
+        let err_msg = format!("Invalid output file extension for safety: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
         error!("{}", err_msg);

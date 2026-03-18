@@ -1,0 +1,4 @@
+## 2024-03-18 - Fix Arbitrary File Write in Image Processing
+**Vulnerability:** The `process_image_inner` function saved output files directly based on the user-provided `out_path` without validating the file extension. If the output path was tampered with (e.g., to write a `.sh`, `.exe`, or `.js` file), the Tauri backend could theoretically overwrite arbitrary files on the system with unexpected content if the filesystem scope allowed it.
+**Learning:** Even though Tauri's filesystem scope (`app.fs_scope().is_allowed()`) restricts *where* a file can be written based on dialog selections, it does not restrict *what* type of file is written. Relying solely on FS scope is insufficient defense in depth when a specific output format is intended.
+**Prevention:** To prevent arbitrary file writes when generating files (e.g., in `process_image_inner`), explicitly validate and strictly whitelist output file extensions against safe formats (e.g., .jpg, .png, .webp).
