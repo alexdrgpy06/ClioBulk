@@ -1,0 +1,3 @@
+## 2024-05-18 - [Direct Zustand Subscriptions for High-Frequency React Updates]
+**Learning:** High-frequency state updates in Zustand (like a 0-100 progress bar during batch processing) will cause severe React render cycle bottlenecks if the component subscribes via `useStore(state => state.progress)`.
+**Action:** For rapid UI updates (progress bars, scroll positions), bypass the React render cycle entirely. Subscribe to the Zustand store using `useStore.subscribe` inside a `useEffect` and manually mutate the DOM element directly using `useRef` (e.g., `ref.current.style.width = newWidth`). Remember to manually sync the initial state using `useStore.getState()` before setting up the subscription.
