@@ -1,0 +1,4 @@
+## 2025-02-23 - Arbitrary File Write via Unrestricted Output Path
+**Vulnerability:** In `process_image_inner`, the output path for processed images (`out_path`) wasn't validated for acceptable file extensions. This allowed users to specify arbitrary paths and extensions (e.g., writing output to `.bashrc` or creating executable scripts), leading to potential arbitrary file writes.
+**Learning:** Even if the underlying file content is valid image data, writing it to unauthorized locations or with executable extensions compromises the host system. Allowing arbitrary file extensions in a desktop application exposes critical system configuration files to overwrite risk.
+**Prevention:** Always strictly whitelist allowed output extensions for generated files (e.g., `.jpg`, `.jpeg`, `.png`, `.webp`). Reject any output paths that don't match the expected format before attempting to save the file.

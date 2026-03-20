@@ -108,6 +108,22 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // SECURITY FIX: Prevent arbitrary file writes by restricting allowed output extensions.
+    let out_path_lc = out_path.to_lowercase();
+    if !out_path_lc.ends_with(".jpg") &&
+       !out_path_lc.ends_with(".jpeg") &&
+       !out_path_lc.ends_with(".png") &&
+       !out_path_lc.ends_with(".webp") {
+        let err_msg = "Invalid output file format. Only JPG, PNG, and WEBP are allowed.".to_string();
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
