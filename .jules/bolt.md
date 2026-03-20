@@ -1,0 +1,3 @@
+## 2024-03-20 - O(1) Map Lookup for High-Frequency Progress Updates
+**Learning:** When handling high-frequency Tauri events (like progress updates) in React that correlate with list items, always use an O(1) lookup mechanism (e.g., a pre-populated `useRef(new Map())`) to avoid O(N²) time complexity bottlenecks that block the main thread. In `src/App.jsx`, replacing an O(N) array search inside the `process-progress` listener with an O(1) Map lookup significantly improves performance during large batch processing.
+**Action:** Always populate an O(1) lookup map (using `useRef` to persist across renders) before initiating large batch operations that emit high-frequency progress events.
