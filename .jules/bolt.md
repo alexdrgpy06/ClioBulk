@@ -1,0 +1,3 @@
+## 2024-05-24 - React Ref & Zustand Subscribe for High-Frequency Updates
+**Learning:** High-frequency state updates like progress bars during processing cause excessive React re-renders if passed normally via global store selectors (e.g., Zustand's `useStore`).
+**Action:** When creating progress components that rely on high-frequency store changes, bypass the React render cycle entirely. Subscribing to the Zustand store using `useStore.subscribe()` inside a `useEffect` and updating the progress bar's DOM style directly with a `ref` results in a smooth, O(1) performance update that prevents main thread blocking.
