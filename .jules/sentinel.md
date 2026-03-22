@@ -1,0 +1,4 @@
+## 2026-03-22 - [CRITICAL] Fix Arbitrary File Write Vulnerability
+**Vulnerability:** The backend image processing function `process_image_inner` accepted any output file path and extension from the frontend without validation. Although there is filesystem scope validation (`is_allowed`), this does not prevent arbitrary files from being overwritten or malicious files from being written if the output directory is within the allowed scope.
+**Learning:** Even when using a filesystem scope for authorization, explicit content-type or file extension validation must be applied to user-provided output paths to prevent creating files that could lead to subsequent exploits (e.g. overwriting configurations, writing scripts).
+**Prevention:** Implement an explicit whitelist of safe file extensions (e.g., `.jpg`, `.jpeg`, `.png`, `.webp`) for generated files and reject paths that do not match the expected safe formats.

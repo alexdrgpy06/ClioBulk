@@ -86,6 +86,21 @@ pub fn process_image_inner<R: Runtime>(
         });
     };
 
+    let out_path_lc = out_path.to_lowercase();
+    if !out_path_lc.ends_with(".jpg") &&
+       !out_path_lc.ends_with(".jpeg") &&
+       !out_path_lc.ends_with(".png") &&
+       !out_path_lc.ends_with(".webp") {
+        let err_msg = format!("Security error: Unsafe output file extension for {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
         error!("{}", err_msg);
