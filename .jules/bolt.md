@@ -1,0 +1,3 @@
+## 2024-06-25 - High-Frequency State Updates in React
+**Learning:** For high-frequency state updates like progress bars during batch processing, triggering a full React render cycle for every percentage point change causes significant main thread lag. Directly subscribing to the Zustand store (`useStore.subscribe`) and mutating a DOM node via `useRef` provides O(1) performance bypass.
+**Action:** Always decouple high-frequency scalar updates (like progress or coordinates) from React state. Use `useRef` and direct DOM mutation (`element.style.width`), but ensure to sync the initial DOM state synchronously on mount (`useStore.getState()`) to avoid visual jumps.
