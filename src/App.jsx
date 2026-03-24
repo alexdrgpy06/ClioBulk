@@ -187,6 +187,8 @@ function App() {
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
+  // O(1) lookup map for fast file ID resolution during high-frequency progress events
+  const filesMapRef = useRef(new Map());
 
   /**
    * Environment Detection & Event Listener Setup
@@ -205,10 +207,11 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // Performance Optimization: Use O(1) Map lookup instead of O(N) Array.find()
+            // High-frequency events from Tauri can block the main thread if lookups are slow.
+            const fileId = filesMapRef.current.get(path);
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
@@ -306,6 +309,15 @@ function App() {
   const startProcessing = useCallback(async () => {
     setProcessing(true);
     setProgress(0);
+
+    // Populate O(1) file lookup map before processing starts
+    filesMapRef.current.clear();
+    files.forEach(f => {
+      const pathKey = f.path || f.file?.name;
+      if (pathKey) {
+        filesMapRef.current.set(pathKey, f.id);
+      }
+    });
 
     if (isTauri) {
       // EXECUTE VIA RUST NATIVE CORE
