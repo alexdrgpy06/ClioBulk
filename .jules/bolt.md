@@ -1,0 +1,3 @@
+## 2025-02-28 - [Progress Bar React Render Bottleneck]
+**Learning:** High-frequency state updates from Tauri events (like `process-progress` firing 100+ times per file) cause severe main thread blocking if they trigger React re-renders for every percentage change.
+**Action:** For high-frequency visual updates that don't affect complex application state (like progress bars), bypass the React render cycle entirely. Use a `useRef` pointing to the DOM element and subscribe directly to the Zustand store using `useStore.subscribe()`, mutating the DOM element's `style` directly within a `useEffect`. Always remember to sync the initial state before subscription to avoid layout jumps mid-process.
