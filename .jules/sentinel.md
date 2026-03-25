@@ -1,0 +1,4 @@
+## 2026-03-25 - Arbitrary File Write via Missing Extension Validation
+**Vulnerability:** The `process_image_inner` function writes files to disk based entirely on the provided `out_path` string without checking the file extension. Even though it's checked by `app.fs_scope().is_allowed(&out_path)`, the `dialog` plugin automatically adds selected directories/files to the allowed scope. This allows a malicious payload to trick the user into saving a .exe, .sh, or other dangerous file type.
+**Learning:** `fs_scope` validation (`is_allowed`) alone is insufficient as it only checks *where* the file is written, not *what type* of file is being written. When generating files from user-controlled input, explicit file extension whitelisting is required to prevent arbitrary file writes.
+**Prevention:** Always implement explicit file extension whitelisting (e.g., .jpg, .png, .webp) before writing generated files to disk.
