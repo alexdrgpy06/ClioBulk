@@ -1,0 +1,3 @@
+## 2024-05-15 - [O(1) Map Lookup for High-Frequency Tauri Events]
+**Learning:** High-frequency Tauri events (like progress updates) that correlate with list items can cause an O(N²) time complexity bottleneck if they perform an O(N) array lookup (`.find()`) on each event.
+**Action:** Use an O(1) lookup mechanism like a pre-populated `useRef(new Map())` to map identifier keys (e.g., file paths) to their corresponding IDs, eliminating the O(N) search per event and preventing the main thread from blocking during large batch processing.

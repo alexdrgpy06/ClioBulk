@@ -188,6 +188,9 @@ function App() {
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
 
+  // O(1) Lookup optimization map for fast file ID resolution during high-frequency events
+  const filesMapRef = useRef(new Map());
+
   /**
    * Environment Detection & Event Listener Setup
    */
@@ -205,10 +208,10 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // Find the file by path using O(1) lookup instead of O(N) find
+            const fileId = filesMapRef.current.get(path);
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
@@ -304,6 +307,15 @@ function App() {
    * Core Processing Pipeline Orchestrator
    */
   const startProcessing = useCallback(async () => {
+    // Populate the optimized O(1) lookup map before processing begins
+    filesMapRef.current.clear();
+    for (const f of files) {
+      const pathKey = f.path || f.file?.name;
+      if (pathKey) {
+        filesMapRef.current.set(pathKey, f.id);
+      }
+    }
+
     setProcessing(true);
     setProgress(0);
 
