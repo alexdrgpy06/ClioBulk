@@ -391,7 +391,7 @@ function App() {
           <button 
             onClick={() => setShowSettings(!showSettings)}
             aria-label="Toggle Settings"
-            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all ${showSettings ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700'}`}
+            className={`flex items-center gap-2 px-4 py-2 rounded-full transition-all focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black ${showSettings ? 'bg-blue-600 shadow-lg shadow-blue-600/30' : 'bg-zinc-800 hover:bg-zinc-700'}`}
           >
             <Settings size={18} />
             <span className="hidden sm:inline text-sm font-medium">Settings</span>
@@ -400,13 +400,13 @@ function App() {
             <button 
               onClick={downloadAll}
               aria-label="Download All Processed Files"
-              className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 transition-all shadow-lg shadow-green-600/20"
+              className="flex items-center gap-2 px-4 py-2 rounded-full bg-green-600 hover:bg-green-500 transition-all shadow-lg shadow-green-600/20 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               <Download size={18} />
               <span className="hidden sm:inline text-sm font-medium">Download All</span>
             </button>
           )}
-          <button disabled={files.length === 0 || processing} onClick={startProcessing} className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20">
+          <button disabled={files.length === 0 || processing} onClick={startProcessing} className="flex items-center gap-2 px-6 py-2 rounded-full bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-blue-600/20 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black">
             {processing ? <Loader2 size={18} className="animate-spin" /> : <Play size={18} fill="currentColor" />}
             <span className="font-bold">{processing ? 'Processing...' : `Process ${files.length > 0 ? `(${files.length})` : ''}`}</span>
           </button>
@@ -422,7 +422,7 @@ function App() {
                  <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><Monitor size={14} />Presets</h3>
                 <div className="grid grid-cols-2 gap-2">
                   {PRESETS.map(preset => (
-                    <button key={preset.name} onClick={() => setProcessingOptions(preset.options)} className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-medium hover:bg-zinc-800 hover:border-zinc-600 transition-all text-left">{preset.name}</button>
+                    <button key={preset.name} onClick={() => setProcessingOptions(preset.options)} className="px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-xs font-medium hover:bg-zinc-800 hover:border-zinc-600 transition-all text-left focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-black">{preset.name}</button>
                   ))}
                 </div>
               </section>
@@ -430,16 +430,16 @@ function App() {
                 <h3 className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest mb-4 flex items-center gap-2"><ImageIcon size={14} />Adjustments</h3>
                 <div className="space-y-6">
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Brightness</label><span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span></div>
-                    <input type="range" min="-1" max="1" step="0.1" value={processingOptions.brightness} onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label className="text-zinc-400" id="brightness-label">Brightness</label><span className="text-blue-500 font-bold">{(processingOptions.brightness * 100).toFixed(0)}%</span></div>
+                    <input aria-labelledby="brightness-label" type="range" min="-1" max="1" step="0.1" value={processingOptions.brightness} onChange={(e) => setProcessingOptions({...processingOptions, brightness: parseFloat(e.target.value)})} className="w-full accent-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950" />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Contrast</label><span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="3" step="0.1" value={processingOptions.contrast} onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label className="text-zinc-400" id="contrast-label">Contrast</label><span className="text-blue-500 font-bold">{processingOptions.contrast.toFixed(1)}x</span></div>
+                    <input aria-labelledby="contrast-label" type="range" min="0" max="3" step="0.1" value={processingOptions.contrast} onChange={(e) => setProcessingOptions({...processingOptions, contrast: parseFloat(e.target.value)})} className="w-full accent-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950" />
                   </div>
                   <div className="space-y-2">
-                    <div className="flex justify-between text-xs"><label className="text-zinc-400">Saturation</label><span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span></div>
-                    <input type="range" min="0" max="2" step="0.1" value={processingOptions.saturation} onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})} className="w-full accent-blue-600" />
+                    <div className="flex justify-between text-xs"><label className="text-zinc-400" id="saturation-label">Saturation</label><span className="text-blue-500 font-bold">{processingOptions.saturation.toFixed(1)}x</span></div>
+                    <input aria-labelledby="saturation-label" type="range" min="0" max="2" step="0.1" value={processingOptions.saturation} onChange={(e) => setProcessingOptions({...processingOptions, saturation: parseFloat(e.target.value)})} className="w-full accent-blue-600 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950" />
                   </div>
                 </div>
               </section>
