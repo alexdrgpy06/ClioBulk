@@ -187,6 +187,20 @@ function App() {
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const fileMapRef = useRef(new Map());
+
+  // Performance Optimization: Maintain an O(1) lookup map of file paths to file objects
+  // This avoids O(N²) array lookups during large bulk operations when handling progress events.
+  useEffect(() => {
+    const map = new Map();
+    files.forEach(f => {
+      const path = f.path || f.file?.name;
+      if (path) {
+        map.set(path, f);
+      }
+    });
+    fileMapRef.current = map;
+  }, [files]);
 
   /**
    * Environment Detection & Event Listener Setup
@@ -205,8 +219,8 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
+            // Find the file by path (O(1) lookup)
+            const fileItem = fileMapRef.current.get(path);
             if (fileItem) {
               updateFileStatus(fileItem.id, success ? 'complete' : 'error');
             }
