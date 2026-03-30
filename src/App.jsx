@@ -187,6 +187,7 @@ function App() {
   const [isTauri, setIsTauri] = useState(false);
   const workerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const pathIdMapRef = useRef(new Map());
 
   /**
    * Environment Detection & Event Listener Setup
@@ -205,10 +206,10 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // Find the file by path using O(1) Map lookup instead of O(N) array find
+            const fileId = pathIdMapRef.current.get(path);
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
@@ -311,10 +312,15 @@ function App() {
       // EXECUTE VIA RUST NATIVE CORE
       try {
         const outBase = await downloadDir();
+
+        // Populate path to ID map for O(1) lookup during high-frequency progress events
+        pathIdMapRef.current.clear();
+
         const filesToProcess = files
           .filter(f => f.status !== 'complete')
           .map(f => {
             const inputPath = f.path || f.file?.name;
+            pathIdMapRef.current.set(inputPath, f.id);
             const fileName = f.name;
             const nameWithoutExt = fileName.lastIndexOf('.') !== -1 ? fileName.substring(0, fileName.lastIndexOf('.')) : fileName;
             const outputPath = `${outBase}\\processed_${nameWithoutExt}.jpg`;
