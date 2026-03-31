@@ -1,0 +1,3 @@
+## 2024-05-24 - Bypass React Renders for High-Frequency State Updates
+**Learning:** Using `useStore.subscribe` in Zustand in combination with a `useRef` provides a powerful optimization for high-frequency updates (like progress bars or continuous scrolling). Subscribing to such updates via a normal React hook causes continuous main-thread re-renders which severely bottleneck performance.
+**Action:** Always implement high-frequency updates by mutating the DOM directly through `useRef` and Zustand's `.subscribe`, rather than relying on React re-renders. Ensure the initial state is synced in the `useEffect` before setting up the subscription.
