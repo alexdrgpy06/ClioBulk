@@ -186,11 +186,51 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
         let sem_h = semaphore.clone();
         let progress = ((i + 1) as f32 / total) * 100.0;
         
+        let in_p_err = in_p.clone();
+        let app_h_err = app_h.clone();
+
         let handle = tokio::spawn(async move {
-            let _permit = sem_h.acquire().await.unwrap();
-            tokio::task::spawn_blocking(move || {
-                process_image_inner(&app_h, in_p, out_p, options_h, progress)
-            }).await.unwrap()
+            match sem_h.acquire().await {
+                Ok(_permit) => {
+                    match tokio::task::spawn_blocking(move || {
+                        process_image_inner(&app_h, in_p, out_p, options_h, progress)
+                    }).await {
+                        Ok(res) => res,
+                        Err(e) => {
+                            let err_msg = format!("Task panicked: {}", e);
+                            error!("{}", err_msg);
+                            let _ = app_h_err.emit("process-progress", ProgressPayload {
+                                path: in_p_err.clone(),
+                                success: false,
+                                error: Some(err_msg.clone()),
+                                progress,
+                                stage: "failed".to_string(),
+                            });
+                            ProcessResult {
+                                success: false,
+                                path: in_p_err,
+                                error: Some(err_msg),
+                            }
+                        }
+                    }
+                },
+                Err(e) => {
+                    let err_msg = format!("Failed to acquire semaphore: {}", e);
+                    error!("{}", err_msg);
+                    let _ = app_h_err.emit("process-progress", ProgressPayload {
+                        path: in_p_err.clone(),
+                         success: false,
+                        error: Some(err_msg.clone()),
+                        progress,
+                        stage: "failed".to_string(),
+                    });
+                    ProcessResult {
+                        success: false,
+                        path: in_p_err,
+                        error: Some(err_msg),
+                    }
+                }
+            }
         });
         handles.push(handle);
     }
