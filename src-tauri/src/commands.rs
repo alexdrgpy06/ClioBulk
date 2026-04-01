@@ -108,6 +108,25 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // Security enhancement: Prevent arbitrary file write by checking extensions
+    let allowed_extensions = ["jpg", "jpeg", "png", "webp"];
+    let is_allowed_ext = std::path::Path::new(&out_path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| allowed_extensions.contains(&ext.to_lowercase().as_str()))
+        .unwrap_or(false);
+
+    if !is_allowed_ext {
+        let err_msg = format!("Invalid file extension for output: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
@@ -186,17 +205,47 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
         let sem_h = semaphore.clone();
         let progress = ((i + 1) as f32 / total) * 100.0;
         
+        let in_p_err = in_p.clone();
+        let app_h_err = app.clone();
+
         let handle = tokio::spawn(async move {
-            let _permit = sem_h.acquire().await.unwrap();
-            tokio::task::spawn_blocking(move || {
-                process_image_inner(&app_h, in_p, out_p, options_h, progress)
-            }).await.unwrap()
+            let permit_res = sem_h.acquire().await;
+            match permit_res {
+                Ok(_permit) => {
+                    let join_res = tokio::task::spawn_blocking(move || {
+                        process_image_inner(&app_h, in_p, out_p, options_h, progress)
+                    }).await;
+
+                    if let Err(e) = join_res {
+                        error!("Task panicked or failed: {}", e);
+                        let _ = app_h_err.emit("process-progress", ProgressPayload {
+                            path: in_p_err,
+                            success: false,
+                            error: Some("Task panicked or failed".to_string()),
+                            progress,
+                            stage: "failed".to_string(),
+                        });
+                    }
+                },
+                Err(e) => {
+                    error!("Failed to acquire semaphore: {}", e);
+                    let _ = app_h_err.emit("process-progress", ProgressPayload {
+                        path: in_p_err,
+                        success: false,
+                        error: Some("Failed to acquire resources".to_string()),
+                        progress,
+                        stage: "failed".to_string(),
+                    });
+                }
+            }
         });
         handles.push(handle);
     }
     
     for handle in handles {
-        let _ = handle.await;
+        if let Err(e) = handle.await {
+            error!("JoinHandle error: {}", e);
+        }
     }
     
     info!("Bulk process completed successfully.");
