@@ -1,0 +1,4 @@
+## 2025-04-02 - Denial of Service via Unhandled Panics in Async Tasks
+**Vulnerability:** The `process_bulk` Tauri command uses `.unwrap()` when acquiring semaphores and awaiting `JoinHandle`s. This can cause the Rust thread to panic, crashing the backend and leading to a Denial of Service (DoS) for the application.
+**Learning:** In asynchronous Rust logic within Tauri commands, especially dealing with bulk operations and threading, panics must be avoided. Errors during async execution or synchronization must be handled gracefully to prevent application crashes.
+**Prevention:** Avoid `unwrap()` on `Semaphore::acquire` and `JoinHandle`. Handle errors gracefully via logging and IPC event emission to notify the frontend, ensuring file path variables and AppHandles are cloned before being moved into async closures to remain available for error reporting.
