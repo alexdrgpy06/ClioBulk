@@ -1,0 +1,3 @@
+## 2024-05-24 - React Component Re-render Optimization using useStore.subscribe
+**Learning:** Frequent updates to a global state variable (like a progress percentage) cause entire React components (and potentially trees) to re-render needlessly when components subscribe directly to that state value via hooks.
+**Action:** When a high-frequency value only affects a specific DOM property (like a progress bar's width), extract only the necessary boolean toggles (like `processing`) to standard hooks, and use `useStore.subscribe` combined with `useRef` to directly mutate the DOM, bypassing React's render cycle completely.
