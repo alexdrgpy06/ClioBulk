@@ -187,10 +187,34 @@ pub async fn process_bulk(app: AppHandle, files: Vec<(String, String)>, options:
         let progress = ((i + 1) as f32 / total) * 100.0;
         
         let handle = tokio::spawn(async move {
-            let _permit = sem_h.acquire().await.unwrap();
-            tokio::task::spawn_blocking(move || {
-                process_image_inner(&app_h, in_p, out_p, options_h, progress)
-            }).await.unwrap()
+            let in_p_clone = in_p.clone();
+            let app_h_err = app_h.clone();
+            match sem_h.acquire().await {
+                Ok(_permit) => {
+                    if let Err(e) = tokio::task::spawn_blocking(move || {
+                        process_image_inner(&app_h, in_p, out_p, options_h, progress)
+                    }).await {
+                        error!("Task panicked or cancelled for {}: {}", in_p_clone, e);
+                        let _ = app_h_err.emit("process-progress", ProgressPayload {
+                            path: in_p_clone,
+                            success: false,
+                            error: Some(format!("Task execution failed: {}", e)),
+                            progress,
+                            stage: "failed".to_string(),
+                        });
+                    }
+                }
+                Err(e) => {
+                    error!("Failed to acquire semaphore for {}: {}", in_p_clone, e);
+                    let _ = app_h_err.emit("process-progress", ProgressPayload {
+                        path: in_p_clone,
+                        success: false,
+                        error: Some(format!("Concurrency limit error: {}", e)),
+                        progress,
+                        stage: "failed".to_string(),
+                    });
+                }
+            }
         });
         handles.push(handle);
     }
