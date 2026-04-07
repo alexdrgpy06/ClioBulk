@@ -1,0 +1,4 @@
+## 2024-05-23 - Arbitrary File Write Bypass in Tauri Image Processor
+**Vulnerability:** The application allowed processing image files and saving them to arbitrary paths and with arbitrary file extensions, as long as they were within the allowed `$PICTURE` scope. This could lead to a scenario where an attacker could overwrite existing legitimate files (such as .txt or .sh files) within the `$PICTURE` directory, which shouldn't happen for an image processing output.
+**Learning:** `fs_scope` validation (`is_allowed`) only restricts the directory path, it does not restrict the file type or extension. Explicit file extension whitelisting is needed when dealing with generated files.
+**Prevention:** Always implement explicit file extension whitelisting (`.jpg`, `.jpeg`, `.png`, `.webp`) in backend Rust commands prior to file writing, especially when the output path is constructed or provided by the frontend.

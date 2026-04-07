@@ -8,7 +8,13 @@
   "permissions": [
     "core:default",
     "dialog:allow-open",
-    "fs:allow-read",
-    "fs:allow-write"
+    {
+      "identifier": "fs:allow-read",
+      "allow": [{ "path": "$PICTURE/**" }]
+    },
+    {
+      "identifier": "fs:allow-write",
+      "allow": [{ "path": "$PICTURE/**" }]
+    }
   ]
 }
