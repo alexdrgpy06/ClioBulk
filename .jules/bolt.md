@@ -1,0 +1,3 @@
+## 2024-04-10 - Bypassing React Renders for High-Frequency Progress Updates
+**Learning:** In Zustand v4, when components subscribe to high-frequency state updates like a global `progress` variable, they trigger unnecessary and expensive React re-renders, causing performance bottlenecks, especially during intensive batch image processing tasks.
+**Action:** Remove the high-frequency property from the component's `useStore` hook to prevent React re-renders. Instead, use a `useRef` to directly manipulate the DOM element (e.g., `progressRef.current.style.width`) and manually subscribe to the store using `useStore.subscribe`. Always ensure to synchronize the initial state by reading `useStore.getState()` in `useEffect` before subscribing.
