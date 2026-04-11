@@ -79,30 +79,62 @@ export class WebGLEngine {
     }
   }
 
+  /**
+   * Compiles a shader from source.
+   * @param {WebGLRenderingContext} gl - WebGL context.
+   * @param {number} type - Shader type (VERTEX_SHADER or FRAGMENT_SHADER).
+   * @param {string} source - Shader source code.
+   * @returns {WebGLShader|null} The compiled shader or null if failed.
+   * @private
+   */
   createShader(gl, type, source) {
     const shader = gl.createShader(type);
+    if (!shader) return null;
+    
     gl.shaderSource(shader, source);
     gl.compileShader(shader);
+    
     if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-      console.error(gl.getShaderInfoLog(shader));
+      console.error('Shader compilation error:', gl.getShaderInfoLog(shader));
       gl.deleteShader(shader);
       return null;
     }
     return shader;
   }
 
+  /**
+   * Creates and links a WebGL program.
+   * @param {string} vsSource - Vertex shader source code.
+   * @param {string} fsSource - Fragment shader source code.
+   * @returns {WebGLProgram|null} The linked program or null if failed.
+   * @private
+   */
   createProgram(vsSource, fsSource) {
     const gl = this.gl;
     const vs = this.createShader(gl, gl.VERTEX_SHADER, vsSource);
     const fs = this.createShader(gl, gl.FRAGMENT_SHADER, fsSource);
+    
+    if (!vs || !fs) return null;
+
     const program = gl.createProgram();
+    if (!program) return null;
+
     gl.attachShader(program, vs);
     gl.attachShader(program, fs);
     gl.linkProgram(program);
+    
     if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error(gl.getProgramInfoLog(program));
+      console.error('Program linking error:', gl.getProgramInfoLog(program));
+      gl.deleteProgram(program);
       return null;
     }
+    
+    // Once linked, we can detach and delete the shaders to save resources
+    gl.detachShader(program, vs);
+    gl.detachShader(program, fs);
+    gl.deleteShader(vs);
+    gl.deleteShader(fs);
+    
     return program;
   }
 
