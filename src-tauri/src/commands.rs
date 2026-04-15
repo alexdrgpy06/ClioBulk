@@ -48,6 +48,13 @@ pub struct ProgressPayload {
 pub fn decode_raw(app: AppHandle, path: String) -> Result<String, String> {
     info!("Decoding RAW file for preview: {}", path);
 
+    let path_lc = path.to_lowercase();
+    let valid_exts = [".arw", ".cr2", ".nef", ".dng", ".jpg", ".jpeg", ".png", ".webp"];
+    if !valid_exts.iter().any(|ext| path_lc.ends_with(*ext)) {
+        error!("Invalid file type: {}", path);
+        return Err(format!("Invalid file type: {}", path));
+    }
+
     if !app.fs_scope().is_allowed(&path) {
         error!("Permission denied: {}", path);
         return Err(format!("Permission denied: {}", path));
@@ -85,6 +92,32 @@ pub fn process_image_inner<R: Runtime>(
             stage: stage.to_string(),
         });
     };
+
+    let path_lc = path.to_lowercase();
+    let out_path_lc = out_path.to_lowercase();
+    let valid_exts = [".arw", ".cr2", ".nef", ".dng", ".jpg", ".jpeg", ".png", ".webp"];
+
+    if !valid_exts.iter().any(|ext| path_lc.ends_with(*ext)) {
+        let err_msg = format!("Invalid input file type: {}", path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    if !valid_exts.iter().any(|ext| out_path_lc.ends_with(*ext)) {
+        let err_msg = format!("Invalid output file type: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
 
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
