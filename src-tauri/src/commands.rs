@@ -7,7 +7,6 @@
  * It manages file permissions, orchestrates the asynchronous bulk 
  * processing pipeline, and handles real-time event emission for UI updates.
  */
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
@@ -88,6 +87,19 @@ pub fn process_image_inner<R: Runtime>(
 
     if !app.fs_scope().is_allowed(&path) {
         let err_msg = format!("Permission denied (read): {}", path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
+    let valid_exts = [".jpg", ".jpeg", ".png", ".webp"];
+    let out_path_lc = out_path.to_lowercase();
+    if !valid_exts.iter().any(|ext| out_path_lc.ends_with(*ext)) {
+        let err_msg = format!("Invalid output file extension: {}", out_path);
         error!("{}", err_msg);
         emit("failed", false, Some(err_msg.clone()));
         return ProcessResult {
