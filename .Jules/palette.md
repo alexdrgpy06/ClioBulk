@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2024-08-01 - [Range Inputs Accessibility]
+**Learning:** Native range inputs and dynamically generated preset buttons in this app lacked default focus rings and screen reader context for their values, making keyboard navigation difficult and uninformative.
+**Action:** Always link range inputs to their labels using `id` and `htmlFor`, provide an `aria-valuetext` that accurately reflects the displayed value, and add explicit `focus-visible` classes to ensure they are visible when navigated via keyboard.
