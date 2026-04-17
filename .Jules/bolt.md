@@ -1,0 +1,5 @@
+## 2024-05-19 - Optimizing React Renders for High-Frequency State Updates with Zustand
+
+**Learning:** When bypassing React renders for high-frequency state updates (like progress bars) using `useStore.subscribe` and a `useRef`, it's critical to ensure the component's `useStore` hook does *not* subscribe to the high-frequency state property. In Zustand v4 setups where `subscribeWithSelector` is not used, `useStore.subscribe` listens to the entire state object. Therefore, to prevent UI desyncs or redundant DOM updates, you must explicitly synchronize the initial state by reading `useStore.getState()` in `useEffect` and manually compare current/previous state within the subscription callback.
+
+**Action:** When implementing direct DOM manipulation for performance with Zustand, carefully review the `useStore` hook dependencies to ensure the component isn't still re-rendering, manually handle initial state synchronization, and implement explicit diffing within the subscription callback if not using `subscribeWithSelector`.
