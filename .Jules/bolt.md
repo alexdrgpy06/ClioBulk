@@ -1,0 +1,3 @@
+## 2024-05-15 - React Render Bypass for Progress Updates
+**Learning:** In Zustand v4 setups where `subscribeWithSelector` is not used, `useStore.subscribe` listens to the entire state object. The `ProgressBar` component was causing excessive re-renders across the app because it was subscribing to high-frequency `progress` updates.
+**Action:** Bypassed React renders by subscribing directly to the store and manually updating the DOM element's width, while ensuring `useStore` only listens to the stable `processing` state. Also manually synchronized the initial state using `useStore.getState().progress` in `useEffect`.
