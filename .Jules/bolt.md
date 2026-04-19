@@ -1,0 +1,3 @@
+## 2024-04-19 - Bypassing React Renders for High-Frequency Zustand Updates
+**Learning:** In Zustand setups without subscribeWithSelector, useStore.subscribe listens to the entire state. To bypass React renders for high-frequency properties (like a progress bar), we must subscribe directly via useEffect and a useRef, manually synchronize initial state with useStore.getState(), and remove the high-frequency property from the component's useStore hook to prevent redundant re-renders.
+**Action:** When implementing progress bars or high-frequency UI updates tied to Zustand, avoid mapping the fast-changing property to the component state. Instead, use a direct DOM reference and useStore.subscribe with manual previous/current state comparisons.
