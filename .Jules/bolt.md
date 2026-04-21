@@ -1,0 +1,3 @@
+## 2024-04-21 - Bypass React render for high-frequency Zustand updates
+**Learning:** High-frequency updates (like progress bars) in Zustand v4 trigger unnecessary React renders if components subscribe to them via hooks. Since Zustand doesn't use `subscribeWithSelector` by default, manual `useStore.subscribe` requires comparing current and previous states manually to prevent UI desyncs.
+**Action:** Use `useStore.subscribe` combined with a `useRef` directly manipulating the DOM element for progress bars, and ensure the component hook only subscribes to low-frequency state (e.g., `processing`) to bypass React's render cycle completely.
