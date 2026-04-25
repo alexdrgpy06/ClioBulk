@@ -1,0 +1,3 @@
+## 2024-04-25 - Bypassing React renders for high-frequency progress updates
+**Learning:** High-frequency event listeners (like progress updates in file processing) cause performance bottlenecks if tied to React state via Zustand's useStore. Because Zustand v4 in this setup lacks `subscribeWithSelector`, `useStore.subscribe` listens to the whole state, requiring manual diffing of state vs prevState.
+**Action:** Use a `useRef` to directly manipulate DOM element styles, subscribe to Zustand explicitly bypassing React state updates, and ensure the component only re-renders on stable state changes like `processing`. Explicitly check `state.progress !== prevState.progress` in the callback.
