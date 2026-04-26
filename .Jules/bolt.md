@@ -1,0 +1,3 @@
+## 2024-11-20 - Bypass React Renders for High-Frequency Updates
+**Learning:** In Zustand v4 setups without `subscribeWithSelector`, `useStore.subscribe` listens to the entire state object. When bypassing React renders for high-frequency updates (e.g., `progress`) using a `useRef`, ensure the component's `useStore` hook does NOT subscribe to the rapidly changing property to avoid unnecessary re-renders. Explicitly synchronize the initial state via `useStore.getState()` in `useEffect` and manually compare current/previous state within the subscription callback.
+**Action:** When implementing high-frequency DOM updates, use `useRef` combined with manual `useStore.subscribe` to bypass React's render cycle, carefully comparing previous/current state manually.
