@@ -1,0 +1,3 @@
+## 2024-05-24 - Zustand Direct DOM Mutation for High-Frequency State
+**Learning:** In Zustand setups without `subscribeWithSelector`, `useStore.subscribe` listens to the entire state object. When bypassing React renders for high-frequency updates (e.g., `progress` during batch processing) using a `useRef`, ensure the component's `useStore` hook does NOT subscribe to the rapidly changing property to avoid unnecessary re-renders. Explicitly synchronize the initial state via `useStore.getState()` in `useEffect` and manually compare current/previous state within the subscription callback.
+**Action:** Use this pattern to manipulate DOM directly for 60fps animations or rapid progress updates without choking the React render tree.
