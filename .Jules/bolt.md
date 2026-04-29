@@ -1,0 +1,3 @@
+## 2024-05-24 - Optimize high-frequency React renders and O(N) lookups
+**Learning:** High-frequency updates (like progress bars) using Zustand can cause excessive re-renders if subscribed to directly via `useStore`. O(N) array lookups inside high-frequency event listeners (like Tauri IPC events) or loops (like batch downloading) can become significant performance bottlenecks as the array size grows.
+**Action:** For high-frequency visual updates, bypass React renders by subscribing directly via `useStore.subscribe` and mutating DOM elements using `useRef`. Pre-compute lookup `Map`s to convert $O(N)$ array searches into $O(1)$ lookups, especially inside event listeners and loops.

@@ -367,14 +367,17 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    const filesMap = new Map(files.map(f => [f.id, f]));
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `processed_${fileItem.name}`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const fileItem = filesMap.get(id);
+      if (fileItem) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `processed_${fileItem.name}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
     });
   }, [files, processedFiles]);
 
