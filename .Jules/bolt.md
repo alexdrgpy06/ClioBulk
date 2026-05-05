@@ -1,0 +1,3 @@
+## 2025-05-05 - Optimize High-Frequency State Updates with O(1) Lookups
+**Learning:** In Zustand stores, high-frequency event listeners (like progress updates or batch downloads) can cause severe bottlenecks when using `Array.find()` O(N) searches over the state array on every update.
+**Action:** Implement pre-computed O(1) lookup Maps (e.g., `fileLookup`, `idLookup`) directly within the store state. Mutate these Maps strictly during infrequent actions (like `addFiles` or `removeFile`) to avoid rebuild penalties during the hot path, and use them for instant access during high-frequency events. Also, avoid relying on component `files` dependencies when the store can provide instant lookup mapping.

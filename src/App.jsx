@@ -205,10 +205,10 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // Find the file id by path using O(1) lookup
+            const fileId = useStore.getState().fileLookup[path];
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
@@ -367,16 +367,17 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    const storeState = useStore.getState();
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileName = storeState.idLookup[id] || 'Unknown';
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `processed_${fileItem.name}`;
+      a.download = `processed_${fileName}`;
       a.click();
       URL.revokeObjectURL(url);
     });
-  }, [files, processedFiles]);
+  }, [processedFiles]);
 
   return (
     <div className="min-h-screen flex flex-col bg-black text-white selection:bg-blue-500/30">
