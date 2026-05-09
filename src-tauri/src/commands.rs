@@ -108,6 +108,21 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // SECURITY: Prevent arbitrary file writes by enforcing safe image extensions.
+    // fs_scope().is_allowed() only checks the directory, not the file type.
+    let out_path_lc = out_path.to_lowercase();
+    let valid_extensions = [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"];
+    if !valid_extensions.iter().any(|ext| out_path_lc.ends_with(ext)) {
+        let err_msg = format!("Security error: Unsafe or unsupported output file extension: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
