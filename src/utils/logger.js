@@ -24,8 +24,10 @@ export const logger = {
    * @returns {Promise<void>}
    */
   async log(message, level = 'INFO') {
+    const sanitizedMessage = String(message).replace(/[\r\n]+/g, ' ');
+    const sanitizedLevel = String(level).replace(/[\r\n]+/g, ' ');
     const timestamp = new Date().toISOString();
-    const formattedMessage = `[${timestamp}] [${level}] ${message}\n`;
+    const formattedMessage = `[${timestamp}] [${sanitizedLevel}] ${sanitizedMessage}\n`;
     
     // Route to standard console based on level
     if (level === 'ERROR') {
