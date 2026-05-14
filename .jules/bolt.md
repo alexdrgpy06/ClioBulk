@@ -1,0 +1,3 @@
+## 2024-05-14 - Fused Affine Transformation for Linear Color Adjustments
+**Learning:** Sequential linear color adjustments (brightness, contrast, saturation) in performance-critical Rust image processing loops introduce multiple per-pixel arithmetic instructions and conditionals, which bottleneck the pipeline. Fusing these operations into a single 3x3 affine transformation matrix and a scalar offset vector significantly improves performance. When calculating the final offset vector during this fusion, ensure the original offset is multiplied by the rows of the transformation matrix, not the columns.
+**Action:** When optimizing per-pixel manipulations, look for opportunities to pre-calculate mathematical operations (like matrix multiplication) outside of the main loop.

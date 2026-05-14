@@ -156,38 +156,38 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
         let raw_pixels = rgb_img.as_mut();
 
         let brightness_offset = options.brightness * 100.0;
-        let contrast = options.contrast;
-        let saturation = options.saturation;
+        let c = options.contrast;
+        let s = options.saturation;
+        let inv_s = 1.0 - s;
+
+        // Precompute the fused transformation matrix
+        let m00 = c * (s + 0.299 * inv_s);
+        let m01 = c * (0.587 * inv_s);
+        let m02 = c * (0.114 * inv_s);
+
+        let m10 = c * (0.299 * inv_s);
+        let m11 = c * (s + 0.587 * inv_s);
+        let m12 = c * (0.114 * inv_s);
+
+        let m20 = c * (0.299 * inv_s);
+        let m21 = c * (0.587 * inv_s);
+        let m22 = c * (s + 0.114 * inv_s);
+
+        // Precompute the fused offset vector
+        let o_c = c * brightness_offset + 128.0 * (1.0 - c);
 
         // Use Rayon to process pixel chunks in parallel
         raw_pixels.par_chunks_mut(3).for_each(|pixel| {
             if pixel.len() != 3 { return; }
 
-            let mut r = pixel[0] as f32;
-            let mut g = pixel[1] as f32;
-            let mut b = pixel[2] as f32;
+            let r_in = pixel[0] as f32;
+            let g_in = pixel[1] as f32;
+            let b_in = pixel[2] as f32;
 
-            // Brightness
-            if brightness_offset != 0.0 {
-                r += brightness_offset;
-                g += brightness_offset;
-                b += brightness_offset;
-            }
-
-            // Contrast
-            if contrast != 1.0 {
-                r = (r - 128.0) * contrast + 128.0;
-                g = (g - 128.0) * contrast + 128.0;
-                b = (b - 128.0) * contrast + 128.0;
-            }
-
-            // Saturation
-            if saturation != 1.0 {
-                let l = 0.299 * r + 0.587 * g + 0.114 * b;
-                r = l + (r - l) * saturation;
-                g = l + (g - l) * saturation;
-                b = l + (b - l) * saturation;
-            }
+            // Apply fused transformation matrix and offset
+            let r = m00 * r_in + m01 * g_in + m02 * b_in + o_c;
+            let g = m10 * r_in + m11 * g_in + m12 * b_in + o_c;
+            let b = m20 * r_in + m21 * g_in + m22 * b_in + o_c;
 
             pixel[0] = r.clamp(0.0, 255.0) as u8;
             pixel[1] = g.clamp(0.0, 255.0) as u8;
