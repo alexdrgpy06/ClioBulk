@@ -159,39 +159,42 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
         let contrast = options.contrast;
         let saturation = options.saturation;
 
+        // Precompute fused affine transformation matrix and scalar offset
+        let c = contrast;
+        let s = saturation;
+        let inv_s = 1.0 - s;
+        let r_y = 0.299 * inv_s;
+        let g_y = 0.587 * inv_s;
+        let b_y = 0.114 * inv_s;
+
+        let m00 = r_y + s; let m01 = g_y;     let m02 = b_y;
+        let m10 = r_y;     let m11 = g_y + s; let m12 = b_y;
+        let m20 = r_y;     let m21 = g_y;     let m22 = b_y + s;
+
+        let f00 = m00 * c; let f01 = m01 * c; let f02 = m02 * c;
+        let f10 = m10 * c; let f11 = m11 * c; let f12 = m12 * c;
+        let f20 = m20 * c; let f21 = m21 * c; let f22 = m22 * c;
+
+        let v = c * brightness_offset + (1.0 - c) * 128.0;
+        let offset_r = m00 * v + m01 * v + m02 * v;
+        let offset_g = m10 * v + m11 * v + m12 * v;
+        let offset_b = m20 * v + m21 * v + m22 * v;
+
         // Use Rayon to process pixel chunks in parallel
         raw_pixels.par_chunks_mut(3).for_each(|pixel| {
             if pixel.len() != 3 { return; }
 
-            let mut r = pixel[0] as f32;
-            let mut g = pixel[1] as f32;
-            let mut b = pixel[2] as f32;
+            let r = pixel[0] as f32;
+            let g = pixel[1] as f32;
+            let b = pixel[2] as f32;
 
-            // Brightness
-            if brightness_offset != 0.0 {
-                r += brightness_offset;
-                g += brightness_offset;
-                b += brightness_offset;
-            }
+            let new_r = f00 * r + f01 * g + f02 * b + offset_r;
+            let new_g = f10 * r + f11 * g + f12 * b + offset_g;
+            let new_b = f20 * r + f21 * g + f22 * b + offset_b;
 
-            // Contrast
-            if contrast != 1.0 {
-                r = (r - 128.0) * contrast + 128.0;
-                g = (g - 128.0) * contrast + 128.0;
-                b = (b - 128.0) * contrast + 128.0;
-            }
-
-            // Saturation
-            if saturation != 1.0 {
-                let l = 0.299 * r + 0.587 * g + 0.114 * b;
-                r = l + (r - l) * saturation;
-                g = l + (g - l) * saturation;
-                b = l + (b - l) * saturation;
-            }
-
-            pixel[0] = r.clamp(0.0, 255.0) as u8;
-            pixel[1] = g.clamp(0.0, 255.0) as u8;
-            pixel[2] = b.clamp(0.0, 255.0) as u8;
+            pixel[0] = new_r.clamp(0.0, 255.0) as u8;
+            pixel[1] = new_g.clamp(0.0, 255.0) as u8;
+            pixel[2] = new_b.clamp(0.0, 255.0) as u8;
         });
 
         img = DynamicImage::ImageRgb8(rgb_img);
