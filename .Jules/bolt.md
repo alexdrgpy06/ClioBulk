@@ -1,0 +1,3 @@
+## 2024-05-16 - Fusing linear color adjustments
+**Learning:** In Rust performance-critical image processing loops, sequential linear color adjustments (e.g., brightness, contrast, saturation) can be mathematically fused into a single 3x3 affine transformation matrix and a scalar offset computed before the loop. This replaces multiple per-pixel arithmetic instructions and conditionals with a single matrix multiplication.
+**Action:** When calculating the final offset vector during this fusion, ensure the original offset is multiplied by the rows of the transformation matrix, not the columns. Apply this technique to optimize pixel transformation loops.

@@ -159,39 +159,54 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
         let contrast = options.contrast;
         let saturation = options.saturation;
 
-        // Use Rayon to process pixel chunks in parallel
+        // Pre-compute matrix transformation for Brightness, Contrast, and Saturation
+        let mut m = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]];
+        let mut offset = [brightness_offset, brightness_offset, brightness_offset];
+
+        for r in 0..3 {
+            for c in 0..3 {
+                m[r][c] *= contrast;
+            }
+            offset[r] = (offset[r] - 128.0) * contrast + 128.0;
+        }
+
+        let luma = [0.299, 0.587, 0.114];
+        let mut s_mat = [[0.0; 3]; 3];
+        for r in 0..3 {
+            for c in 0..3 {
+                s_mat[r][c] = luma[c] * (1.0 - saturation) + if r == c { saturation } else { 0.0 };
+            }
+        }
+
+        let mut new_m = [[0.0; 3]; 3];
+        for r in 0..3 {
+            for c in 0..3 {
+                new_m[r][c] = s_mat[r][0] * m[0][c] + s_mat[r][1] * m[1][c] + s_mat[r][2] * m[2][c];
+            }
+        }
+        m = new_m;
+
+        let mut new_offset = [0.0; 3];
+        for r in 0..3 {
+            new_offset[r] = s_mat[r][0] * offset[0] + s_mat[r][1] * offset[1] + s_mat[r][2] * offset[2];
+        }
+        offset = new_offset;
+
+        // Use Rayon to process pixel chunks in parallel with a single matrix multiplication
         raw_pixels.par_chunks_mut(3).for_each(|pixel| {
             if pixel.len() != 3 { return; }
 
-            let mut r = pixel[0] as f32;
-            let mut g = pixel[1] as f32;
-            let mut b = pixel[2] as f32;
+            let r = pixel[0] as f32;
+            let g = pixel[1] as f32;
+            let b = pixel[2] as f32;
 
-            // Brightness
-            if brightness_offset != 0.0 {
-                r += brightness_offset;
-                g += brightness_offset;
-                b += brightness_offset;
-            }
+            let new_r = m[0][0] * r + m[0][1] * g + m[0][2] * b + offset[0];
+            let new_g = m[1][0] * r + m[1][1] * g + m[1][2] * b + offset[1];
+            let new_b = m[2][0] * r + m[2][1] * g + m[2][2] * b + offset[2];
 
-            // Contrast
-            if contrast != 1.0 {
-                r = (r - 128.0) * contrast + 128.0;
-                g = (g - 128.0) * contrast + 128.0;
-                b = (b - 128.0) * contrast + 128.0;
-            }
-
-            // Saturation
-            if saturation != 1.0 {
-                let l = 0.299 * r + 0.587 * g + 0.114 * b;
-                r = l + (r - l) * saturation;
-                g = l + (g - l) * saturation;
-                b = l + (b - l) * saturation;
-            }
-
-            pixel[0] = r.clamp(0.0, 255.0) as u8;
-            pixel[1] = g.clamp(0.0, 255.0) as u8;
-            pixel[2] = b.clamp(0.0, 255.0) as u8;
+            pixel[0] = new_r.clamp(0.0, 255.0) as u8;
+            pixel[1] = new_g.clamp(0.0, 255.0) as u8;
+            pixel[2] = new_b.clamp(0.0, 255.0) as u8;
         });
 
         img = DynamicImage::ImageRgb8(rgb_img);
