@@ -159,35 +159,39 @@ pub fn apply_filters(mut img: DynamicImage, options: &ProcessOptions) -> Dynamic
         let contrast = options.contrast;
         let saturation = options.saturation;
 
+        // Pre-calculate mathematically fused affine transformation matrix
+        // Brightness -> Contrast -> Saturation
+        let inv_s = 1.0 - saturation;
+        let rw = 0.299 * inv_s;
+        let gw = 0.587 * inv_s;
+        let bw = 0.114 * inv_s;
+
+        let sr = saturation + rw;
+        let sg = saturation + gw;
+        let sb = saturation + bw;
+
+        let m00 = contrast * sr; let m01 = contrast * gw; let m02 = contrast * bw;
+        let m10 = contrast * rw; let m11 = contrast * sg; let m12 = contrast * bw;
+        let m20 = contrast * rw; let m21 = contrast * gw; let m22 = contrast * sb;
+
+        let c_off = 128.0 * (1.0 - contrast);
+
+        let off_r = m00 * brightness_offset + m01 * brightness_offset + m02 * brightness_offset + c_off;
+        let off_g = m10 * brightness_offset + m11 * brightness_offset + m12 * brightness_offset + c_off;
+        let off_b = m20 * brightness_offset + m21 * brightness_offset + m22 * brightness_offset + c_off;
+
         // Use Rayon to process pixel chunks in parallel
         raw_pixels.par_chunks_mut(3).for_each(|pixel| {
             if pixel.len() != 3 { return; }
 
-            let mut r = pixel[0] as f32;
-            let mut g = pixel[1] as f32;
-            let mut b = pixel[2] as f32;
+            let orig_r = pixel[0] as f32;
+            let orig_g = pixel[1] as f32;
+            let orig_b = pixel[2] as f32;
 
-            // Brightness
-            if brightness_offset != 0.0 {
-                r += brightness_offset;
-                g += brightness_offset;
-                b += brightness_offset;
-            }
-
-            // Contrast
-            if contrast != 1.0 {
-                r = (r - 128.0) * contrast + 128.0;
-                g = (g - 128.0) * contrast + 128.0;
-                b = (b - 128.0) * contrast + 128.0;
-            }
-
-            // Saturation
-            if saturation != 1.0 {
-                let l = 0.299 * r + 0.587 * g + 0.114 * b;
-                r = l + (r - l) * saturation;
-                g = l + (g - l) * saturation;
-                b = l + (b - l) * saturation;
-            }
+            // Apply fused transformation
+            let r = orig_r * m00 + orig_g * m01 + orig_b * m02 + off_r;
+            let g = orig_r * m10 + orig_g * m11 + orig_b * m12 + off_g;
+            let b = orig_r * m20 + orig_g * m21 + orig_b * m22 + off_b;
 
             pixel[0] = r.clamp(0.0, 255.0) as u8;
             pixel[1] = g.clamp(0.0, 255.0) as u8;
