@@ -1,0 +1,3 @@
+## 2024-05-20 - O(N) Lookups in High Frequency Events
+**Learning:** Performing O(N) array lookups (e.g., `files.find()`) within high-frequency event listeners (like progress updates or batch processing) causes severe performance regressions, blocking the main thread and dropping frames. However, using `useEffect` or `useMemo` to maintain a pre-computed dictionary causes similar penalties due to rebuild costs on every rapid state change.
+**Action:** Always maintain an O(1) lookup map directly inside the global store (like Zustand) and strictly mutate it ONLY during infrequent list-modification actions (e.g., adding or removing items), rather than inside the hot path or high-frequency events themselves.
