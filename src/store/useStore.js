@@ -5,23 +5,42 @@ export const useStore = create((set) => ({
   files: [],
   processing: false,
   processedFiles: {}, // id -> blob
+  fileIdsByPath: {}, // path -> id
   progress: 0,
   lut: null, // { size, data }
   watermark: null, // { image, text, opacity, rect }
   
-  addFiles: (newFiles) => set((state) => ({ 
-    files: [...state.files, ...newFiles.map(f => ({
+  addFiles: (newFiles) => set((state) => {
+    const mappedFiles = newFiles.map(f => ({
       file: f.file || null,
       path: f.path || null,
       name: f.name || (f.file ? f.file.name : 'Unknown'),
       id: Math.random().toString(36).substr(2, 9),
       status: 'pending'
-    }))] 
-  })),
+    }));
+    const newFileIdsByPath = { ...state.fileIdsByPath };
+    mappedFiles.forEach(f => {
+      const key = f.path || (f.file ? f.file.name : null);
+      if (key) newFileIdsByPath[key] = f.id;
+    });
+    return {
+      files: [...state.files, ...mappedFiles],
+      fileIdsByPath: newFileIdsByPath
+    };
+  }),
   
-  removeFile: (id) => set((state) => ({
-    files: state.files.filter(f => f.id !== id)
-  })),
+  removeFile: (id) => set((state) => {
+    const fileToRemove = state.files.find(f => f.id === id);
+    const newFileIdsByPath = { ...state.fileIdsByPath };
+    if (fileToRemove) {
+      const key = fileToRemove.path || (fileToRemove.file ? fileToRemove.file.name : null);
+      if (key) delete newFileIdsByPath[key];
+    }
+    return {
+      files: state.files.filter(f => f.id !== id),
+      fileIdsByPath: newFileIdsByPath
+    };
+  }),
 
   setLut: (lut) => set({ lut }),
   setWatermark: (watermark) => set({ watermark }),
@@ -34,5 +53,5 @@ export const useStore = create((set) => ({
     return { files: newFiles, processedFiles: newProcessedFiles };
   }),
   
-  clearFiles: () => set({ files: [], processedFiles: {}, progress: 0 })
+  clearFiles: () => set({ files: [], processedFiles: {}, fileIdsByPath: {}, progress: 0 })
 }));
