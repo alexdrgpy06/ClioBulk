@@ -1,0 +1,3 @@
+## 2024-06-25 - O(1) Dictionary Lookup for High-Frequency Events
+**Learning:** Using an O(N) array `.find()` inside high-frequency event listeners (like progress updates) causes performance bottlenecks. Dynamically allocating a Map inside the hot path or using useMemo/useEffect to maintain the Map if the source array changes rapidly causes a severe performance regression.
+**Action:** Implement a pre-computed O(1) lookup dictionary (Map or Object) directly within the global state (e.g., Zustand store) and mutate it strictly during infrequent list-modification actions (e.g., addFiles, removeFile).
