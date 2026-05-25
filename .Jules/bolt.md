@@ -1,0 +1,3 @@
+## 2024-10-31 - O(1) Map Lookups in Zustand
+**Learning:** To optimize O(N) searches inside high-frequency event listeners, a pre-computed O(1) lookup dictionary (Map) should be implemented directly within the Zustand store state, strictly mutated only during infrequent list-modification actions like addFiles or removeFile. Dynamically building or maintaining this Map on every rapid state change via useMemo or inside the hot path causes severe performance regressions.
+**Action:** When implementing O(1) lookups for state collections, embed the dictionary in the central store and update it synchronously alongside the original list actions, enabling fast and direct access during frequent updates without triggering rebuild penalties.
