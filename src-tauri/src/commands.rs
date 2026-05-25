@@ -1,13 +1,3 @@
-/**
- * Author: Alejandro Ramírez
- * 
- * ClioBulk Native Backend Command Interface
- * 
- * This module defines the Tauri commands accessible by the frontend.
- * It manages file permissions, orchestrates the asynchronous bulk 
- * processing pipeline, and handles real-time event emission for UI updates.
- */
-use image::DynamicImage;
 use serde::{Deserialize, Serialize};
 use base64::{Engine as _, engine::general_purpose};
 use tauri::{AppHandle, Emitter, Runtime};
