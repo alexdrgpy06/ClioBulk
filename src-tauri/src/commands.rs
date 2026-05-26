@@ -108,6 +108,19 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    let out_path_lc = out_path.to_lowercase();
+    if !out_path_lc.ends_with(".jpg") && !out_path_lc.ends_with(".jpeg") &&
+       !out_path_lc.ends_with(".png") && !out_path_lc.ends_with(".webp") {
+        let err_msg = format!("Invalid output file extension: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path.clone(),
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
