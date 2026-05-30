@@ -5,23 +5,44 @@ export const useStore = create((set) => ({
   files: [],
   processing: false,
   processedFiles: {}, // id -> blob
+  fileIdsByPath: {}, // path || name -> id
   progress: 0,
   lut: null, // { size, data }
   watermark: null, // { image, text, opacity, rect }
   
-  addFiles: (newFiles) => set((state) => ({ 
-    files: [...state.files, ...newFiles.map(f => ({
-      file: f.file || null,
-      path: f.path || null,
-      name: f.name || (f.file ? f.file.name : 'Unknown'),
-      id: Math.random().toString(36).substr(2, 9),
-      status: 'pending'
-    }))] 
-  })),
+  addFiles: (newFiles) => set((state) => {
+    const newFileIdsByPath = { ...state.fileIdsByPath };
+    const processedNewFiles = newFiles.map(f => {
+      const id = crypto.randomUUID();
+      const name = f.name || (f.file ? f.file.name : 'Unknown');
+      const path = f.path || null;
+      newFileIdsByPath[path || name] = id;
+      return {
+        file: f.file || null,
+        path,
+        name,
+        id,
+        status: 'pending'
+      };
+    });
+    return {
+      files: [...state.files, ...processedNewFiles],
+      fileIdsByPath: newFileIdsByPath
+    };
+  }),
   
-  removeFile: (id) => set((state) => ({
-    files: state.files.filter(f => f.id !== id)
-  })),
+  removeFile: (id) => set((state) => {
+    const fileToRemove = state.files.find(f => f.id === id);
+    if (!fileToRemove) return state;
+
+    const newFileIdsByPath = { ...state.fileIdsByPath };
+    delete newFileIdsByPath[fileToRemove.path || fileToRemove.name];
+
+    return {
+      files: state.files.filter(f => f.id !== id),
+      fileIdsByPath: newFileIdsByPath
+    };
+  }),
 
   setLut: (lut) => set({ lut }),
   setWatermark: (watermark) => set({ watermark }),
@@ -34,5 +55,5 @@ export const useStore = create((set) => ({
     return { files: newFiles, processedFiles: newProcessedFiles };
   }),
   
-  clearFiles: () => set({ files: [], processedFiles: {}, progress: 0 })
+  clearFiles: () => set({ files: [], processedFiles: {}, fileIdsByPath: {}, progress: 0 })
 }));
