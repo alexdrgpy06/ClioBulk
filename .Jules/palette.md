@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2024-05-31 - [Range Input and Dynamic Button Focus]
+**Learning:** Standard HTML5 `<input type="range">` controls and dynamically rendered elements (like `<button>` in a `.map()`) do not inherit global focus styles in this project, making them invisible to keyboard navigation. Also, screen readers cannot properly announce range input values without `aria-valuetext` and a connected `<label>` via `htmlFor`/`id`.
+**Action:** Always explicitly apply Tailwind `focus-visible` utility classes (e.g., `focus-visible:ring-2`) to these elements. Ensure `<input type="range">` elements have `aria-valuetext` and are bound to their `<label>` with `htmlFor` and `id`.
