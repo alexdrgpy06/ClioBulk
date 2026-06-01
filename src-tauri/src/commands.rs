@@ -108,6 +108,25 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // Security check: validate output extension to prevent arbitrary file writes
+    let allowed_exts = ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "tif"];
+    let out_ext = std::path::Path::new(&out_path)
+        .extension()
+        .and_then(std::ffi::OsStr::to_str)
+        .map(|s| s.to_lowercase())
+        .unwrap_or_default();
+
+    if !allowed_exts.contains(&out_ext.as_str()) {
+        let err_msg = format!("Security error: Invalid output file extension '{}'", out_ext);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
