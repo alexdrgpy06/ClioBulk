@@ -205,10 +205,12 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // Performance Optimization: O(1) lookup using fileIdsByPath instead of O(N) array search
+            // This prevents performance degradation during high-frequency Tauri bulk process events
+            const state = useStore.getState();
+            const fileId = state.fileIdsByPath[path];
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
