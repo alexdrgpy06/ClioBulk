@@ -108,6 +108,22 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // Security: Validate output file extension to prevent arbitrary file writes
+    let allowed_extensions = ["jpg", "jpeg", "png", "webp"];
+    let out_path_lc = out_path.to_lowercase();
+    let has_allowed_ext = allowed_extensions.iter().any(|ext| out_path_lc.ends_with(&format!(".{}", ext)));
+
+    if !has_allowed_ext {
+        let err_msg = format!("Security error: Invalid output file extension. Allowed: {:?}", allowed_extensions);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
