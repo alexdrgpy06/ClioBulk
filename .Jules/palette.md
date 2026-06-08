@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2024-07-28 - [Accessible Range Inputs]
+**Learning:** Standard HTML5 `<input type="range">` controls do not inherit global focus styles in this project and screen readers may not clearly announce their dynamic values without proper bindings.
+**Action:** Always provide explicit `focus-visible` utility classes (e.g., `focus-visible:ring-2`) and ensure properly associated labels (`htmlFor`/`id`) along with `aria-valuetext` for dynamic values.
