@@ -205,10 +205,11 @@ function App() {
           // Intermediate stages (decoding, filtering, saving) emit events but status is still 'processing'.
           // This avoids ~75% of redundant store updates and re-renders.
           if (stage === 'completed' || stage === 'failed') {
-            // Find the file by path
-            const fileItem = useStore.getState().files.find(f => (f.path || f.file?.name) === path);
-            if (fileItem) {
-              updateFileStatus(fileItem.id, success ? 'complete' : 'error');
+            // ⚡ Bolt Optimization: Replace O(n) array search with O(1) dictionary lookup
+            // Resolves file IDs via pre-computed fileIdsByPath in Zustand to avoid array scans during high-frequency events
+            const fileId = useStore.getState().fileIdsByPath[path];
+            if (fileId) {
+              updateFileStatus(fileId, success ? 'complete' : 'error');
             }
           }
           setProgress(p);
