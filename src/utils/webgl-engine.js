@@ -226,21 +226,40 @@ export class WebGLEngine {
 }
 
 export function parseCubeLUT(data) {
-  const lines = data.split('\n');
+  // ⚡ Bolt: Fast LUT parsing avoiding regex and dynamic array resizing
   let size = 0;
-  const lut = [];
+  let match = /LUT_3D_SIZE\s+(\d+)/.exec(data);
+  if (match) {
+    size = parseInt(match[1], 10);
+  }
+
+  const expectedLength = size * size * size * 3;
+  const lut = new Float32Array(expectedLength);
+  let index = 0;
+  let pos = 0;
+  const len = data.length;
   
-  for (let line of lines) {
-    line = line.trim();
-    if (line.startsWith('LUT_3D_SIZE')) {
-      size = parseInt(line.split(/\s+/)[1]);
-    } else if (/^[\d.-]+/.test(line) && !line.startsWith('TITLE') && !line.startsWith('DOMAIN')) {
-      const parts = line.split(/\s+/).map(parseFloat);
-      if (parts.length === 3) {
-        lut.push(...parts);
+  while (pos < len && index < expectedLength) {
+    while (pos < len && data.charCodeAt(pos) <= 32) pos++;
+    if (pos >= len) break;
+
+    const charCode = data.charCodeAt(pos);
+    if ((charCode >= 48 && charCode <= 57) || charCode === 45 || charCode === 43 || charCode === 46) {
+      let endOfLine = data.indexOf('\n', pos);
+      if (endOfLine === -1) endOfLine = len;
+
+      const parts = data.substring(pos, endOfLine).trim().split(/\s+/);
+      if (parts.length >= 3) {
+        lut[index++] = parseFloat(parts[0]);
+        lut[index++] = parseFloat(parts[1]);
+        lut[index++] = parseFloat(parts[2]);
       }
+      pos = endOfLine;
+    } else {
+      pos = data.indexOf('\n', pos);
+      if (pos === -1) pos = len;
     }
   }
-  
-  return { size, data: new Float32Array(lut) };
+
+  return { size, data: lut };
 }
