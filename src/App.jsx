@@ -367,8 +367,16 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // ⚡ Bolt: Optimize O(N^2) nested loop into O(N) hash map lookup
+    // Creates a lookup map to avoid O(N) Array.find() inside the O(N) loop
+    const fileMap = files.reduce((acc, f) => {
+      acc[f.id] = f;
+      return acc;
+    }, {});
+
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap[id];
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
