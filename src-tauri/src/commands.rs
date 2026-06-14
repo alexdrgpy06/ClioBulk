@@ -108,6 +108,24 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    let allowed_exts = ["jpg", "jpeg", "png", "webp", "bmp", "tiff", "tif"];
+    let has_valid_ext = std::path::Path::new(&out_path)
+        .extension()
+        .and_then(|ext| ext.to_str())
+        .map(|ext| allowed_exts.contains(&ext.to_lowercase().as_str()))
+        .unwrap_or(false);
+
+    if !has_valid_ext {
+        let err_msg = format!("Permission denied (invalid file extension): {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
