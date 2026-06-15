@@ -1,0 +1,7 @@
+## 2025-06-15 - Fast Array Filter-Map Replacement
+**Learning:** In the frontend bulk file processor (`App.jsx`), replacing a chained `.filter().map()` pipeline over arrays of files with a simple `for` loop that avoids intermediate array creation and redundant string interpolations yielded a minor performance benefit. However, the performance bottleneck on array mapping of 20k elements (10ms to 13ms) is not significant enough for an explicit PR focused solely on optimization compared to finding $O(N^2)$ bottlenecks.
+**Action:** Always measure array iterations before optimizing. Simple single pass loops perform slightly better than `.filter().map()` chains in Node JS, but unless the work performed in the loop itself is costly, $O(N)$ operations on frontend arrays are rarely the critical bottleneck.
+
+## 2025-06-15 - React Redundant Re-Renders due to Array Finding
+**Learning:** `App.jsx` handles real-time progress events from the Rust backend. Finding the correct file via `useStore.getState().files.find(f => ...)` is an $O(N)$ operation performed for *every* event emitted. For a bulk operation of 10,000 files, if each file emits 3 events (completed/failed), that's 30,000 $O(N)$ lookups, or roughly $O(N^2)$ complexity, leading to potentially massive main-thread blocking. A benchmark showed a 20000 item $O(N^2)$ search takes 2 seconds vs 48ms for a hash map implementation.
+**Action:** In bulk processing state management, replace $O(N)$ array lookups with $O(1)$ Hash Map (or Object) lookups, especially when handling high-frequency events.
