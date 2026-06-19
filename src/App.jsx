@@ -367,8 +367,12 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // Performance Optimization: Build an O(1) lookup dictionary locally to avoid O(N^2) lookups
+    // without causing thrashing by using useMemo on the frequently updating files array.
+    const fileLookup = files.reduce((acc, f) => { acc[f.id] = f; return acc; }, {});
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileLookup[id];
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
