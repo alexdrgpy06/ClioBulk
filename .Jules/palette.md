@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2024-05-24 - Explicit Label Associations for Range Sliders
+**Learning:** Range inputs for adjustments were missing explicit label associations (`htmlFor` matching `id`), preventing screen readers from correctly announcing the setting name when the slider is focused.
+**Action:** Always explicitly associate `<label>` and `<input>` elements using matching `htmlFor` and `id` attributes for custom settings sliders and range inputs to ensure full keyboard and screen reader accessibility.
