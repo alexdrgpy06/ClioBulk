@@ -367,8 +367,15 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // Performance Optimization: Generate ID-to-File map locally to avoid O(N^2) loop complexity
+    const fileMap = new Map();
+    for (let i = 0; i < files.length; i++) {
+      fileMap.set(files[i].id, files[i]);
+    }
+
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap.get(id);
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
