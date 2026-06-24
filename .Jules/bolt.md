@@ -1,0 +1,3 @@
+## 2024-06-24 - Replace O(N) array lookup with O(1) Map in batch processing loop
+**Learning:** Using `Array.find()` inside a loop (like iterating `processedFiles`) results in O(N^2) performance, causing significant UI freezing during bulk download/processing when dealing with large numbers of files. Relying on `useMemo` for this mapping causes main thread thrashing due to rapid updates in the global Zustand store.
+**Action:** Generate an O(1) lookup `Map` locally within the specific callback (e.g., `downloadAll`) before iterating to eliminate the O(N) inner loop without triggering excessive re-renders.
