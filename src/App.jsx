@@ -367,8 +367,16 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // Performance Optimization: Replace O(N^2) lookup with O(N) local map mapping
+    // Eliminates main thread UI freezing during bulk download of many files.
+    const fileMap = new Map();
+    for (const file of files) {
+      fileMap.set(file.id, file);
+    }
+
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap.get(id);
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
