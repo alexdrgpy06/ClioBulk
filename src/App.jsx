@@ -367,8 +367,14 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // ⚡ Bolt Performance Optimization:
+    // Generate an ID-to-File map locally for this one-off operation to achieve O(1) lookups.
+    // This avoids O(N^2) array searches across thousands of files without introducing
+    // main thread thrashing that a reactive useMemo([files]) cache would cause.
+    const fileMap = new Map(files.map(f => [f.id, f]));
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap.get(id);
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
