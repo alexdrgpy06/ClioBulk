@@ -97,6 +97,20 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    let allowed_exts = [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"];
+    let out_path_lower = out_path.to_lowercase();
+    let has_allowed_ext = IntoIterator::into_iter(allowed_exts).any(|ext| out_path_lower.ends_with(ext));
+    if !has_allowed_ext {
+        let err_msg = format!("Security error: Unallowed file extension for write: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
         error!("{}", err_msg);
