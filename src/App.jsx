@@ -367,8 +367,14 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // ⚡ Bolt: Generate map locally to avoid O(N^2) nested loops during batch download
+    // while preventing useMemo main thread thrashing on frequent file updates
+    const filesMap = new Map(files.map(f => [f.id, f]));
+
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = filesMap.get(id);
+      if (!fileItem) return;
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
