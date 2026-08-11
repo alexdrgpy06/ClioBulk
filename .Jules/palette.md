@@ -5,3 +5,6 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+## 2024-05-18 - Input Label Association
+**Learning:** React range sliders for settings need explicit `htmlFor` and `id` linking for screen readers to properly announce the setting names.
+**Action:** Always add matching `id` to the input and `htmlFor` to the label when implementing custom controls.
