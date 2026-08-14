@@ -97,6 +97,21 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // SECURITY: Prevent arbitrary file write vulnerabilities by enforcing an extension whitelist.
+    // fs_scope().is_allowed() only validates the directory, not the file extension.
+    let out_path_lc = out_path.to_lowercase();
+    let allowed_exts = [".jpg", ".jpeg", ".png", ".webp"];
+    if !allowed_exts.iter().any(|&ext| out_path_lc.ends_with(ext)) {
+        let err_msg = format!("Security error: output file extension not permitted: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     if !app.fs_scope().is_allowed(&out_path) {
         let err_msg = format!("Permission denied (write): {}", out_path);
         error!("{}", err_msg);
