@@ -367,8 +367,15 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // Generate map locally to avoid O(N^2) lookups without triggering useMemo thrashing
+    const fileMap = new Map();
+    for (const f of files) {
+      fileMap.set(f.id, f);
+    }
+
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap.get(id);
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
