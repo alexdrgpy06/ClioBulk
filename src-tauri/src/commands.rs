@@ -108,6 +108,20 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // 🛡️ Sentinel: Ensure the output file has a valid image extension to prevent arbitrary file writes
+    let out_path_lc = out_path.to_lowercase();
+    let allowed_extensions = [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff"];
+    if !allowed_extensions.iter().any(|&ext| out_path_lc.ends_with(ext)) {
+        let err_msg = format!("Invalid output file extension: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
