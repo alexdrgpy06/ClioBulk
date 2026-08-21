@@ -108,6 +108,20 @@ pub fn process_image_inner<R: Runtime>(
         };
     }
 
+    // Security: Restrict output to known image formats
+    let allowed_exts = [".jpg", ".jpeg", ".png", ".webp", ".bmp", ".tiff", ".gif"];
+    let out_path_lc = out_path.to_lowercase();
+    if !allowed_exts.iter().any(|&ext| out_path_lc.ends_with(ext)) {
+        let err_msg = format!("Invalid file extension for output: {}", out_path);
+        error!("{}", err_msg);
+        emit("failed", false, Some(err_msg.clone()));
+        return ProcessResult {
+            success: false,
+            path: out_path,
+            error: Some(err_msg),
+        };
+    }
+
     emit("decoding", true, None);
     let path_lc = path.to_lowercase();
     let img_res = if path_lc.ends_with(".arw") || 
