@@ -367,8 +367,13 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // ⚡ Bolt: Replace O(N) array lookup with O(1) Map generated locally
+    // to avoid severe O(N^2) slowdown on large batches, without
+    // causing main thread thrashing from a useMemo cache.
+    const fileMap = new Map(files.map(f => [f.id, f]));
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap.get(id);
+      if (!fileItem) return;
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
