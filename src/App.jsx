@@ -367,8 +367,10 @@ function App() {
   }, [files, isTauri, lut, processingOptions, setProcessing, setProgress, updateFileStatus, watermark]);
 
   const downloadAll = useCallback(() => {
+    // Performance Optimization: Create a local lookup map to avoid O(N) array search inside the loop
+    const fileMap = Object.fromEntries(files.map(f => [f.id, f]));
     Object.entries(processedFiles).forEach(([id, blob]) => {
-      const fileItem = files.find(f => f.id === id);
+      const fileItem = fileMap[id];
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
