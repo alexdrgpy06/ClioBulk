@@ -5,3 +5,7 @@
 ## 2024-06-25 - [Keyboard Accessible File Inputs]
 **Learning:** Using `<label>` to wrap a hidden file input works for mouse users but fails for keyboard users if the input is `display: none` (hidden) or if the label itself isn't focusable. Additionally, `onClick` on a `<label>` is not triggered by keyboard.
 **Action:** Use a visible `<button>` that programmatically triggers the file input (via `ref.current.click()`) or the native file dialog. This ensures the control is naturally focusable and actionable via keyboard.
+
+## 2026-08-25 - [Range Input Accessibility]
+**Learning:** Form elements such as sliders were not explicitly associated with their visual labels, causing screen readers to announce them as 'slider' without context.
+**Action:** Explicitly link <label> and <input> using matching htmlFor and id attributes when building custom range settings or form controls.
