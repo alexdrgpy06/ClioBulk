@@ -2,6 +2,15 @@
 
 Tracks whop-product-lab issue #14. **Audit only — no fixes applied this round.** Every finding below is severity-ranked (Critical/High/Medium/Low) with a one-line fix recommendation for a follow-up round. See `docs/specs/14-local-image-raw-family-hardening.md` for the canonical-base decision this checklist feeds into, and `NAMING.md` for the naming proposal.
 
+## Follow-up pass (2026-09-18) — JS/web-side only
+
+Fixed, scoped to what's verifiable without a Rust/Tauri build in this sandbox (see original scope note in section 3):
+
+- **Dependency audit (section 1):** ran `npm audit fix` (in-range only). 5 of 6 original highs resolved (browserslist, nanoid, picomatch, postcss, rollup). The remaining 1 high (vite path-traversal) + 1 moderate (esbuild) only have a fix via the Vite 5→8 major bump, which this checklist explicitly said needs separate sign-off — **not done**, still open.
+- **Test coverage (section 5):** added `vitest`, wired `npm test`, and wrote a real test suite for `parseCubeLUT` (`src/utils/webgl-engine.js`) and `isRaw` (`src/utils/raw-decoder.js`) — 20 tests, all passing. The `parseCubeLUT` suite includes a test that documents a real defect: a malformed data row (wrong column count) is silently dropped instead of erroring, desyncing the flat LUT array from the declared `size` — see the test named `BUG: silently drops a malformed row...` for the exact mechanism. Not fixed (out of scope for this pass), just now covered so it can't regress silently and is visible to the next person who touches this file.
+- `npm run build` still passes after both changes.
+- Not touched: `src-tauri/`, any `.rs` file, the Vite major bump, RAW CFA/demosaic findings (native-side, sections 6-7).
+
 Environment this audit ran in: Node v22.22.2, npm 10.9.7, cargo/rustc 1.94.1 (both present), Linux sandbox.
 
 ## Findings summary
